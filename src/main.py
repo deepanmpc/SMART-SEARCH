@@ -1,7 +1,7 @@
 import sys
 from crawler import crawl_directory
 from extractor import extract_any_document
-from vector_space import init_db, insert_file
+from FileName import init_db, insert_file
 
 FOLDER = "/Users/deepandee/Desktop/SMART_SEARCH/test-data" # Updated default
 
