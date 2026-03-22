@@ -13,15 +13,10 @@ def crawl_directory(folder_path):
                 stat = path.stat()
                 
                 files.append({
-                    "name": path.name,
+                    "filename": path.name,
                     "path": str(path),
-                    "abs_path": str(path.resolve()),
                     "type": ext,
-                    "size": stat.st_size,
-                    "modified": stat.st_mtime,
-                    "created": stat.st_ctime,
-                    "accessed": stat.st_atime,
-                    "parent": str(path.parent)
+                    "modified": stat.st_mtime
                 })
     
     return files

@@ -3,7 +3,7 @@ from crawler import crawl_directory
 from extractor import extract_any_document
 from FileName import init_db, insert_file
 
-FOLDER = "/Users/deepandee/Desktop/SMART_SEARCH/test-data" # Updated default
+FOLDER = "/Users/deepandee/Desktop/od_alms"
 
 def run_indexing(folder):
     conn = init_db()
