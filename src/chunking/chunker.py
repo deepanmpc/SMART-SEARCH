@@ -16,7 +16,7 @@ def normalize_text(text: str) -> str:
     return text.strip()
 
 
-def chunk_text(text: str, chunk_size: int = 120, overlap: int = 30) -> List[str]:
+def chunk_text(text: str, chunk_size: int = 100, overlap: int = 25) -> List[str]:
     """
     Recursive character chunker.
     Strategy: paragraph breaks → sentence endings → sliding window.
