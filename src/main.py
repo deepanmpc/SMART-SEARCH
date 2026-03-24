@@ -16,7 +16,8 @@ def run_indexing(folder):
 
         extraction_result = extract_any_document(file_meta["path"])
         if extraction_result.get("success"):
-            file_meta["content"] = extraction_result.get("text", "")
+            chunks = extraction_result.get("chunks", [])
+            file_meta["content"] = "\n\n---CHUNK---\n\n".join(chunks)
         else:
             file_meta["content"] = ""
             print(f"Extraction failed for {file_meta['path']}: {extraction_result.get('error')}")
