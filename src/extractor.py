@@ -47,22 +47,26 @@ except ImportError:
 # TEXT CHUNKING
 # =========================
 
-def chunk_text(text: str, chunk_size=120, overlap=30) -> List[str]:
+import re
 
-    words = text.split()
+import re
+
+def chunk_text(text):
+
+    # remove page markers
+    text = re.sub(r"--- Page \d+ ---", "", text)
+
+    # split numbered questions
+    sections = re.split(r"\n\d+\.\s", text)
+
     chunks = []
 
-    start = 0
+    for section in sections:
+        section = section.strip()
 
-    while start < len(words):
-
-        end = start + chunk_size
-        chunk = " ".join(words[start:end])
-
-        if len(chunk.strip()) > 30:
-            chunks.append(chunk)
-
-        start += chunk_size - overlap
+        # ignore headers or very small pieces
+        if len(section) > 60:
+            chunks.append(section)
 
     return chunks
 
