@@ -44,10 +44,10 @@ except ImportError:
 
 
 # =========================
-# Chunking
+# TEXT CHUNKING
 # =========================
 
-def chunk_text(text: str, chunk_size=400, overlap=50) -> List[str]:
+def chunk_text(text: str, chunk_size=120, overlap=30) -> List[str]:
 
     words = text.split()
     chunks = []
@@ -68,7 +68,7 @@ def chunk_text(text: str, chunk_size=400, overlap=50) -> List[str]:
 
 
 # =========================
-# PDF Extraction
+# PDF EXTRACTION
 # =========================
 
 def extract_pdf(file_path: str) -> str:
@@ -107,7 +107,7 @@ def extract_pdf(file_path: str) -> str:
 
 
 # =========================
-# DOCX Extraction
+# DOCX EXTRACTION
 # =========================
 
 def extract_docx(file_path: str) -> str:
@@ -137,7 +137,7 @@ def extract_docx(file_path: str) -> str:
 
 
 # =========================
-# TXT Extraction
+# TXT EXTRACTION
 # =========================
 
 def extract_txt(file_path: str) -> str:
@@ -153,7 +153,7 @@ def extract_txt(file_path: str) -> str:
 
 
 # =========================
-# Tika fallback
+# TIKA FALLBACK
 # =========================
 
 def extract_with_tika(file_path: str) -> str:
@@ -175,7 +175,7 @@ def extract_with_tika(file_path: str) -> str:
 
 
 # =========================
-# Universal extractor
+# UNIVERSAL EXTRACTOR
 # =========================
 
 def extract_any_document(file_path: str) -> Dict[str, Any]:
@@ -191,6 +191,7 @@ def extract_any_document(file_path: str) -> Dict[str, Any]:
 
     text = ""
 
+    # Select extractor
     if path.suffix.lower() == ".pdf":
         text = extract_pdf(file_path)
 
@@ -200,6 +201,7 @@ def extract_any_document(file_path: str) -> Dict[str, Any]:
     elif path.suffix.lower() == ".txt":
         text = extract_txt(file_path)
 
+    # Fallback to Tika
     if not text:
         text = extract_with_tika(file_path)
 
@@ -210,6 +212,7 @@ def extract_any_document(file_path: str) -> Dict[str, Any]:
             "error": "text extraction failed"
         }
 
+    # Chunk the text
     chunks = chunk_text(text)
 
     return {
@@ -220,7 +223,7 @@ def extract_any_document(file_path: str) -> Dict[str, Any]:
 
 
 # =========================
-# CLI
+# CLI TEST
 # =========================
 
 if __name__ == "__main__":
@@ -234,6 +237,12 @@ if __name__ == "__main__":
     result = extract_any_document(sys.argv[1])
 
     if result["success"]:
-        print("Extracted chunks:", len(result["chunks"]))
+
+        print(f"Extracted chunks: {len(result['chunks'])}")
+
+        for c in result["chunks"][:2]:
+            print("\nChunk preview:\n", c[:200])
+
     else:
+
         print("Error:", result["error"])
