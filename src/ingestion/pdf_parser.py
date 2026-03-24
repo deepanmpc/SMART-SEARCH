@@ -1,12 +1,12 @@
 """
-Media router — routes files by type for multimodal embedding.
-
-- Images/Video/Audio → raw bytes (sent directly to Gemini)
-- Small PDFs (≤6 pages) → raw bytes
-- Large PDFs/DOCX/TXT → text extraction + chunking
+Document parser — extracts raw text from PDF, DOCX, TXT.
+Always returns text for chunking (no raw-bytes path).
 """
 
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 try:
     from PyPDF2 import PdfReader
@@ -20,83 +20,83 @@ try:
 except ImportError:
     DOCX_AVAILABLE = False
 
+try:
+    from tika import parser
+    TIKA_AVAILABLE = True
+except ImportError:
+    TIKA_AVAILABLE = False
 
-def _read_bytes(file_path: str) -> bytes:
-    with open(file_path, "rb") as f:
-        return f.read()
 
-
-def _get_pdf_page_count(file_path: str) -> int:
+def extract_pdf(file_path: str) -> str:
     if not PYPDF_AVAILABLE:
-        return 999
+        return ""
     try:
-        return len(PdfReader(file_path).pages)
-    except Exception:
-        return 999
+        reader = PdfReader(file_path)
+        return "\n".join(page.extract_text() or "" for page in reader.pages)
+    except Exception as e:
+        logger.error(f"PDF extraction failed: {e}")
+        return ""
 
 
-def _extract_docx_text(file_path: str) -> str:
+def extract_docx(file_path: str) -> str:
     if not DOCX_AVAILABLE:
         return ""
-    doc = Document(file_path)
-    parts = [p.text for p in doc.paragraphs]
-    for table in doc.tables:
-        for row in table.rows:
-            parts.append(" | ".join(c.text for c in row.cells))
-    return "\n".join(parts)
+    try:
+        doc = Document(file_path)
+        parts = [p.text for p in doc.paragraphs]
+        for table in doc.tables:
+            for row in table.rows:
+                parts.append(" | ".join(c.text for c in row.cells))
+        return "\n".join(parts)
+    except Exception as e:
+        logger.error(f"DOCX extraction failed: {e}")
+        return ""
 
 
-def _chunk_text(text: str, chunk_size: int = 500) -> list[str]:
-    """Word-based chunker with overlap for long text documents."""
-    words = text.split()
-    chunks = []
-    for i in range(0, len(words), chunk_size - 50):
-        chunk = " ".join(words[i:i + chunk_size])
-        if len(chunk.strip()) > 50:
-            chunks.append(chunk)
-    return chunks
+def extract_txt(file_path: str) -> str:
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            return f.read()
+    except Exception as e:
+        logger.error(f"TXT extraction failed: {e}")
+        return ""
 
 
-def prepare_for_embedding(file_meta: dict) -> list[dict]:
+def extract_with_tika(file_path: str) -> str:
+    if not TIKA_AVAILABLE:
+        return ""
+    try:
+        raw = parser.from_file(file_path)
+        return raw.get("content", "") if raw else ""
+    except Exception as e:
+        logger.error(f"Tika failed: {e}")
+        return ""
+
+
+def parse_document(file_path: str) -> dict:
     """
-    Returns a list of 'embedding units'. Each unit is either:
-      - {"type": "bytes", "data": bytes, "mime_type": str}
-      - {"type": "text", "data": str}
+    Extract text from any supported document.
+    Returns {"success": bool, "text": str, "error": str}
     """
-    path = file_meta["path"]
-    file_type = file_meta["type"]
-    ext = file_meta["ext"]
+    path = Path(file_path)
 
-    if file_type == "image":
-        mime = "image/jpeg" if ext in (".jpg", ".jpeg") else "image/png"
-        return [{"type": "bytes", "data": _read_bytes(path), "mime_type": mime}]
+    if not path.exists():
+        return {"success": False, "text": "", "error": "file not found"}
 
-    if file_type == "video":
-        mime = "video/mp4" if ext == ".mp4" else "video/quicktime"
-        return [{"type": "bytes", "data": _read_bytes(path), "mime_type": mime}]
+    ext = path.suffix.lower()
+    text = ""
 
-    if file_type == "audio":
-        mime_map = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4"}
-        return [{"type": "bytes", "data": _read_bytes(path), "mime_type": mime_map.get(ext, "audio/mpeg")}]
+    if ext == ".pdf":
+        text = extract_pdf(file_path)
+    elif ext in (".docx", ".doc"):
+        text = extract_docx(file_path)
+    elif ext == ".txt":
+        text = extract_txt(file_path)
 
-    if file_type == "pdf":
-        page_count = _get_pdf_page_count(path)
-        if page_count <= 6:
-            return [{"type": "bytes", "data": _read_bytes(path), "mime_type": "application/pdf"}]
-        else:
-            if PYPDF_AVAILABLE:
-                reader = PdfReader(path)
-                text = "\n".join(page.extract_text() or "" for page in reader.pages)
-                return [{"type": "text", "data": c} for c in _chunk_text(text)]
-            return []
+    if not text:
+        text = extract_with_tika(file_path)
 
-    if file_type == "docx":
-        text = _extract_docx_text(path)
-        return [{"type": "text", "data": c} for c in _chunk_text(text)]
+    if not text or not text.strip():
+        return {"success": False, "text": "", "error": "extraction failed"}
 
-    if file_type == "text":
-        with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            text = f.read()
-        return [{"type": "text", "data": c} for c in _chunk_text(text)]
-
-    return []
+    return {"success": True, "text": text}

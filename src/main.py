@@ -1,14 +1,14 @@
 """
 SMART SEARCH — main pipeline orchestrator.
 
-Pipeline: crawl → route → embed → FAISS index → SQLite metadata
+Pipeline: crawl → parse → chunk (120 words) → embed → FAISS + SQLite
+Each chunk = one row in SQLite + one vector in FAISS.
 """
 
 import sys
-from pathlib import Path
-
 from crawler import crawl_directory
-from ingestion.pdf_parser import prepare_for_embedding
+from ingestion.pdf_parser import parse_document
+from chunking.chunker import chunk_text
 from embedding.gemini_embedder import embed_unit, make_file_id
 from vector_store.faiss_index import FaissIndex
 from database.metadata_store import init_db, insert_chunk, clear_document
@@ -26,42 +26,50 @@ def run_pipeline(folder: str):
     files = crawl_directory(folder)
     print(f"Found {len(files)} files\n")
 
+    total_chunks = 0
+
     for file_meta in files:
         path = file_meta["path"]
-        print(f"Processing: {file_meta['filename']}  [{file_meta['type']}]")
+        filename = file_meta["filename"]
+        print(f"Processing: {filename}")
 
-        units = prepare_for_embedding(file_meta)
-        if not units:
-            print(f"  ✗ Skipped (no embeddable units)")
+        # 1. Parse → raw text
+        result = parse_document(path)
+        if not result["success"]:
+            print(f"  ✗ {result['error']}")
             continue
 
+        # 2. Chunk → 120-word segments
+        chunks = chunk_text(result["text"])
+        print(f"  → {len(chunks)} chunks")
+
+        # 3. Clear old data
         clear_document(conn, path)
 
-        embedded = 0
-        for i, unit in enumerate(units):
+        # 4. Embed each chunk and store
+        for i, chunk in enumerate(chunks):
+            unit = {"type": "text", "data": chunk}
             embedding = embed_unit(unit)
             if embedding is None:
                 continue
 
-            # Update FAISS dimension on first embedding
             if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(embedding):
                 faiss_idx = FaissIndex(dimension=len(embedding))
 
             vector_ids = faiss_idx.add([embedding])
             file_id = make_file_id(path, i)
-            chunk_text = unit["data"] if unit["type"] == "text" else ""
-            insert_chunk(conn, vector_ids[0], file_id, file_meta, i, chunk_text)
-            embedded += 1
+            insert_chunk(conn, vector_ids[0], file_id, file_meta, i, chunk)
+            total_chunks += 1
 
-        print(f"  ✓ Indexed {embedded}/{len(units)} chunk(s)")
+        print(f"  ✓ {len(chunks)} chunks indexed")
 
     faiss_idx.save(INDEX_PATH)
 
     print(f"\n{'='*50}")
     print(f"Indexing complete!")
+    print(f"  Total chunks: {total_chunks}")
     print(f"  FAISS vectors: {faiss_idx.total_vectors}")
     print(f"  SQLite DB:     {DB_PATH}")
-    print(f"  FAISS index:   {INDEX_PATH}")
 
 
 if __name__ == "__main__":
