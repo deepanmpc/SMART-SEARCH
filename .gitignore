@@ -1,5 +1,5 @@
 .venv/
-__pycache__/
+/Users/deepandee/Desktop/SMART_SEARCH_mcp/src/__pycache__
 *.py[cod]
 files.db
 .DS_Store

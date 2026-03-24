@@ -14,7 +14,6 @@ def run_indexing(folder):
     for file_meta in files:
         print(f"Processing: {file_meta['path']}")
 
-        # Extract textual content from the file
         extraction_result = extract_any_document(file_meta["path"])
         if extraction_result.get("success"):
             file_meta["content"] = extraction_result.get("text", "")
@@ -22,7 +21,6 @@ def run_indexing(folder):
             file_meta["content"] = ""
             print(f"Extraction failed for {file_meta['path']}: {extraction_result.get('error')}")
 
-        # Insert metadata and content into the database
         insert_file(conn, file_meta)
 
     print("Indexing complete.")
