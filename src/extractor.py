@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -47,28 +48,105 @@ except ImportError:
 # TEXT CHUNKING
 # =========================
 
-import re
+def chunk_text(text: str, chunk_size: int = 120, overlap: int = 30) -> List[str]:
+    """
+    Recursive character chunker for semantic search pipelines.
 
-import re
+    Strategy (in order of preference):
+      1. Split on paragraph breaks (double newlines)
+      2. Split on single newlines
+      3. Split on sentence endings (. ? !)
+      4. Fall back to sliding-window over words
 
-def chunk_text(text):
+    Chunks that are too small (<30 chars) are silently dropped.
+    Chunks that exceed chunk_size words are recursively split
+    using the sliding-window fallback so every output chunk
+    stays within the target token budget.
+    """
 
-    # remove page markers
-    text = re.sub(r"--- Page \d+ ---", "", text)
+    # ---------- helpers ----------
 
-    # split numbered questions
-    sections = re.split(r"\n\d+\.\s", text)
+    def _word_count(s: str) -> int:
+        return len(s.split())
 
-    chunks = []
+    def _sliding_window(text: str) -> List[str]:
+        """Fixed-size sliding window — the final fallback."""
+        words = text.split()
+        result = []
+        start = 0
+        while start < len(words):
+            chunk = " ".join(words[start : start + chunk_size])
+            if len(chunk.strip()) > 30:
+                result.append(chunk)
+            start += chunk_size - overlap
+        return result
 
-    for section in sections:
-        section = section.strip()
+    def _split_and_merge(text: str, separators: List[str]) -> List[str]:
+        """
+        Try each separator in order.  Merge small pieces into chunks
+        that stay at or below chunk_size words, then recurse on anything
+        that is still too large.
+        """
+        if not separators:
+            return _sliding_window(text)
 
-        # ignore headers or very small pieces
-        if len(section) > 60:
-            chunks.append(section)
+        sep, *rest = separators
+        parts = [p.strip() for p in re.split(sep, text) if p.strip()]
 
-    return chunks
+        # If the separator produced no useful split, try the next one
+        if len(parts) <= 1:
+            return _split_and_merge(text, rest)
+
+        chunks: List[str] = []
+        current: List[str] = []
+        current_words = 0
+
+        for part in parts:
+            part_words = _word_count(part)
+
+            # Part alone is bigger than the target — recurse deeper
+            if part_words > chunk_size:
+                # Flush whatever we have first
+                if current:
+                    merged = " ".join(current)
+                    if len(merged.strip()) > 30:
+                        chunks.append(merged)
+                    current = []
+                    current_words = 0
+                chunks.extend(_split_and_merge(part, rest))
+                continue
+
+            # Adding this part would exceed the target — flush and start fresh
+            if current_words + part_words > chunk_size and current:
+                merged = " ".join(current)
+                if len(merged.strip()) > 30:
+                    chunks.append(merged)
+                # Keep overlap: retain the last `overlap` words of the flushed chunk
+                overlap_words = " ".join(current).split()[-overlap:]
+                current = overlap_words + [part]
+                current_words = len(current)
+            else:
+                current.append(part)
+                current_words += part_words
+
+        # Flush remainder
+        if current:
+            merged = " ".join(current)
+            if len(merged.strip()) > 30:
+                chunks.append(merged)
+
+        return chunks
+
+    # ---------- main ----------
+
+    # Ordered from coarsest to finest separator
+    separators = [
+        r"\n\n+",       # paragraph breaks
+        r"\n",          # single newlines
+        r"(?<=[.?!])\s+",  # sentence endings
+    ]
+
+    return _split_and_merge(text.strip(), separators)
 
 
 # =========================
