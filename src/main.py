@@ -1,7 +1,8 @@
 import sys
 from crawler import crawl_directory
 from extractor import extract_any_document
-from FileName import init_db, insert_file
+from FileName import init_db, delete_file, insert_chunk
+from embedding import run_embedding
 
 FOLDER = "/Users/deepandee/Desktop/od_alms"
 
@@ -29,9 +30,11 @@ def run_indexing(folder):
 
         chunks = extraction_result.get("chunks", [])
 
-        print(f"Inserted {len(chunks)} chunks")
+        # Remove any previously indexed chunks for this file
+        delete_file(conn, file_path)
+        print(f"Inserting {len(chunks)} chunks")
 
-        for chunk in chunks:
+        for i, chunk in enumerate(chunks):
 
             record = {
                 "path": file_path,
@@ -41,9 +44,12 @@ def run_indexing(folder):
                 "modified": file_meta["modified"]
             }
 
-            insert_file(conn, record)
+            insert_chunk(conn, record, chunk_index=i)
 
-    print("Indexing complete.")
+    print("Indexing complete.\n")
+
+    # Generate embeddings for any new chunks
+    run_embedding()
 
 
 if __name__ == "__main__":

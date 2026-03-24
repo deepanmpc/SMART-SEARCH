@@ -48,21 +48,51 @@ except ImportError:
 # TEXT CHUNKING
 # =========================
 
+def normalize_text(text: str) -> str:
+    """
+    Clean raw extracted text before chunking.
+
+    Fixes:
+    - Hyphenated line-breaks  e.g. "detec-\ntion" → "detection"
+    - Mid-word newlines       e.g. "feature\nextraction" → "feature extraction"
+    - Tabs / non-breaking spaces → regular space
+    - Multiple blank lines    → single blank line (preserve paragraph signal)
+    - Leading/trailing whitespace
+    """
+
+    # 1. Rejoin words that were split across lines with a hyphen
+    text = re.sub(r"-\n(\S)", r"\1", text)
+
+    # 2. Replace tabs and non-breaking spaces with a regular space
+    text = re.sub(r"[ \t\xa0]+", " ", text)
+
+    # 3. Join lines that are NOT paragraph breaks
+    #    (A real paragraph break = blank line; a soft wrap = single \n)
+    text = re.sub(r"(?<!\n)\n(?!\n)", " ", text)
+
+    # 4. Collapse runs of 3+ newlines down to 2 (one blank line)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    # 5. Strip leftover page-marker noise (e.g. "--- Page 1 ---")
+    text = re.sub(r"-{2,}\s*Page\s*\d+\s*-{2,}", "", text, flags=re.IGNORECASE)
+
+    return text.strip()
+
+
 def chunk_text(text: str, chunk_size: int = 120, overlap: int = 30) -> List[str]:
     """
     Recursive character chunker for semantic search pipelines.
 
-    Strategy (in order of preference):
-      1. Split on paragraph breaks (double newlines)
-      2. Split on single newlines
-      3. Split on sentence endings (. ? !)
-      4. Fall back to sliding-window over words
+    Pre-processes text with normalize_text() first, then splits using
+    the following strategy (coarsest → finest):
+      1. Paragraph breaks (double newlines)
+      2. Sentence endings (. ? !)
+      4. Sliding-window over words (final fallback)
 
-    Chunks that are too small (<30 chars) are silently dropped.
-    Chunks that exceed chunk_size words are recursively split
-    using the sliding-window fallback so every output chunk
-    stays within the target token budget.
+    Chunks smaller than 30 characters are silently dropped.
     """
+
+    text = normalize_text(text)
 
     # ---------- helpers ----------
 
@@ -83,7 +113,7 @@ def chunk_text(text: str, chunk_size: int = 120, overlap: int = 30) -> List[str]
 
     def _split_and_merge(text: str, separators: List[str]) -> List[str]:
         """
-        Try each separator in order.  Merge small pieces into chunks
+        Try each separator in order. Merge small pieces into chunks
         that stay at or below chunk_size words, then recurse on anything
         that is still too large.
         """
@@ -104,9 +134,8 @@ def chunk_text(text: str, chunk_size: int = 120, overlap: int = 30) -> List[str]
         for part in parts:
             part_words = _word_count(part)
 
-            # Part alone is bigger than the target — recurse deeper
+            # Part alone is bigger than target — recurse deeper
             if part_words > chunk_size:
-                # Flush whatever we have first
                 if current:
                     merged = " ".join(current)
                     if len(merged.strip()) > 30:
@@ -116,12 +145,11 @@ def chunk_text(text: str, chunk_size: int = 120, overlap: int = 30) -> List[str]
                 chunks.extend(_split_and_merge(part, rest))
                 continue
 
-            # Adding this part would exceed the target — flush and start fresh
+            # Adding this part would exceed target — flush and carry overlap
             if current_words + part_words > chunk_size and current:
                 merged = " ".join(current)
                 if len(merged.strip()) > 30:
                     chunks.append(merged)
-                # Keep overlap: retain the last `overlap` words of the flushed chunk
                 overlap_words = " ".join(current).split()[-overlap:]
                 current = overlap_words + [part]
                 current_words = len(current)
@@ -139,14 +167,12 @@ def chunk_text(text: str, chunk_size: int = 120, overlap: int = 30) -> List[str]
 
     # ---------- main ----------
 
-    # Ordered from coarsest to finest separator
     separators = [
-        r"\n\n+",       # paragraph breaks
-        r"\n",          # single newlines
+        r"\n\n+",          # paragraph breaks
         r"(?<=[.?!])\s+",  # sentence endings
     ]
 
-    return _split_and_merge(text.strip(), separators)
+    return _split_and_merge(text, separators)
 
 
 # =========================

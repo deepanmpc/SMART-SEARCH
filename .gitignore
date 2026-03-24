@@ -3,3 +3,4 @@
 *.py[cod]
 files.db
 .DS_Store
+.env
