@@ -1,10 +1,20 @@
 from pathlib import Path
 
 SUPPORTED_EXTENSIONS = {
+    # Documents
     ".pdf": "pdf", ".docx": "docx", ".doc": "docx", ".txt": "text",
-    ".jpg": "image", ".jpeg": "image", ".png": "image",
-    ".mp4": "video", ".mov": "video",
-    ".mp3": "audio", ".wav": "audio", ".m4a": "audio",
+    ".pptx": "pptx", ".ppt": "pptx", ".md": "text", ".rtf": "text",
+    # Code Files
+    ".py": "text", ".js": "text", ".ts": "text", ".c": "text", ".cpp": "text",
+    ".h": "text", ".html": "text", ".css": "text", ".json": "text",
+    ".yaml": "text", ".yml": "text", ".sh": "text", ".sql": "text",
+    # Images
+    ".jpg": "image", ".jpeg": "image", ".png": "image", ".webp": "image",
+    ".gif": "image", ".bmp": "image",
+    # Video
+    ".mp4": "video", ".mov": "video", ".avi": "video", ".mkv": "video",
+    # Audio
+    ".mp3": "audio", ".wav": "audio", ".m4a": "audio", ".flac": "audio",
 }
 
 SKIP_DIRS = {".git", ".venv", "__pycache__", "node_modules"}

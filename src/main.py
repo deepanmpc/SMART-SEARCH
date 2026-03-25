@@ -54,7 +54,7 @@ class Spinner:
         print(f"\r{ok('✓')}  {msg or self.label}" + " " * 20)
 
 # ── constants ─────────────────────────────────────────────────────────────────
-SUPPORTED   = {".pdf": "pdf", ".docx": "docx", ".doc": "docx", ".txt": "text"}
+from crawler import SUPPORTED_EXTENSIONS as SUPPORTED
 SKIP_DIRS   = {".git", ".venv", "__pycache__", "node_modules", ".DS_Store"}
 INDEX_PATH  = "index.faiss"
 DB_PATH     = "metadata.db"
@@ -134,11 +134,12 @@ def cmd_index(folder: str | None = None):
         if go != "y": return
         print()
 
-    from ingestion.pdf_parser import parse_document
+    from ingestion.document_parser import parse_document
     from chunking.chunker import chunk_text
     from embedding.gemini_embedder import embed_unit, make_file_id
     from vector_store.faiss_index import FaissIndex
     from database.metadata_store import init_db, insert_chunk, clear_document
+    import mimetypes
 
     conn = init_db(DB_PATH)
     faiss_idx = FaissIndex()
@@ -149,38 +150,70 @@ def cmd_index(folder: str | None = None):
 
     for i, fm in enumerate(files):
         label = f"[{i+1}/{len(files)}] {fm['filename']}"
-
-        result = parse_document(fm["path"])
-        if not result["success"]:
-            print(f"  {dim('–')} {dim(label)} {warn('(skipped)')}")
-            skipped += 1
-            continue
-
-        chunks = chunk_text(result["text"])
-        if not chunks:
-            print(f"  {dim('–')} {dim(label)} {warn('(no text)')}")
-            skipped += 1
-            continue
-
         clear_document(conn, fm["path"])
-
         indexed = 0
-        for ci, chunk in enumerate(chunks):
-            unit = {"type": "text", "data": chunk}
-            vec = embed_unit(unit)
-            if vec is None:
+
+        if fm["type"] in ("image", "audio", "video"):
+            # Multimodal ingestion (one chunk for the whole file)
+            try:
+                with open(fm["path"], "rb") as bf:
+                    data = bf.read()
+                mime_type, _ = mimetypes.guess_type(fm["path"])
+                if not mime_type:
+                    # Fallback common mimes
+                    ext = fm["ext"]
+                    if fm["type"] == "image": mime_type = f"image/{ext[1:]}"
+                    elif fm["type"] == "audio": mime_type = f"audio/{ext[1:]}"
+                    elif fm["type"] == "video": mime_type = f"video/{ext[1:]}"
+                
+                unit = {"type": fm["type"], "data": data, "mime_type": mime_type}
+                vec = embed_unit(unit)
+                if vec is not None:
+                    if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
+                        faiss_idx = FaissIndex(dimension=len(vec))
+                    
+                    vector_ids = faiss_idx.add([vec])
+                    file_id = make_file_id(fm["path"], 0)
+                    insert_chunk(conn, vector_ids[0], file_id, fm, 0, f"[Multimodal {fm['type']}]")
+                    indexed = 1
+                    total_chunks += 1
+            except Exception as e:
+                print(f"  {err('!')} {label} {warn(f'failed: {e}')}")
+                skipped += 1
+                continue
+        else:
+            # Text-based ingestion
+            result = parse_document(fm["path"])
+            if not result["success"]:
+                print(f"  {dim('–')} {dim(label)} {warn('(skipped)')}")
+                skipped += 1
                 continue
 
-            if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                faiss_idx = FaissIndex(dimension=len(vec))
+            chunks = chunk_text(result["text"])
+            if not chunks:
+                print(f"  {dim('–')} {dim(label)} {warn('(no text)')}")
+                skipped += 1
+                continue
 
-            vector_ids = faiss_idx.add([vec])
-            file_id = make_file_id(fm["path"], ci)
-            insert_chunk(conn, vector_ids[0], file_id, fm, ci, chunk)
-            indexed += 1
-            total_chunks += 1
+            for ci, chunk in enumerate(chunks):
+                unit = {"type": "text", "data": chunk}
+                vec = embed_unit(unit)
+                if vec is None:
+                    continue
 
-        print(f"  {ok('✓')} {label} {dim(f'({indexed} chunks)')}")
+                if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
+                    faiss_idx = FaissIndex(dimension=len(vec))
+
+                vector_ids = faiss_idx.add([vec])
+                file_id = make_file_id(fm["path"], ci)
+                insert_chunk(conn, vector_ids[0], file_id, fm, ci, chunk)
+                indexed += 1
+                total_chunks += 1
+
+        if indexed > 0:
+            print(f"  {ok('✓')} {label} {dim(f'({indexed} chunks)')}")
+        else:
+            skipped += 1
 
     faiss_idx.save(INDEX_PATH)
 

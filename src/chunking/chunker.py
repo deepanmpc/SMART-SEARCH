@@ -30,7 +30,7 @@ def chunk_text(text: str, chunk_size: int = 100, overlap: int = 25) -> List[str]
         start = 0
         while start < len(words):
             chunk = " ".join(words[start:start + chunk_size])
-            if len(chunk.strip()) > 30:
+            if len(chunk.strip()) > 5:
                 result.append(chunk)
             start += chunk_size - overlap
         return result
@@ -55,7 +55,7 @@ def chunk_text(text: str, chunk_size: int = 100, overlap: int = 25) -> List[str]
             if pw > chunk_size:
                 if current:
                     merged = " ".join(current)
-                    if len(merged.strip()) > 30:
+                    if len(merged.strip()) > 5:
                         chunks.append(merged)
                     current, current_words = [], 0
                 chunks.extend(_split_and_merge(part, rest))
@@ -63,7 +63,7 @@ def chunk_text(text: str, chunk_size: int = 100, overlap: int = 25) -> List[str]
 
             if current_words + pw > chunk_size and current:
                 merged = " ".join(current)
-                if len(merged.strip()) > 30:
+                if len(merged.strip()) > 5:
                     chunks.append(merged)
                 overlap_words = " ".join(current).split()[-overlap:]
                 current = overlap_words + [part]
@@ -74,7 +74,7 @@ def chunk_text(text: str, chunk_size: int = 100, overlap: int = 25) -> List[str]
 
         if current:
             merged = " ".join(current)
-            if len(merged.strip()) > 30:
+            if len(merged.strip()) > 5:
                 chunks.append(merged)
 
         return chunks
