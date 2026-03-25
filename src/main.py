@@ -217,8 +217,11 @@ def cmd_index(folder: str | None = None):
         indexed = 0
 
         if fm["type"] in ("image", "audio", "video"):
-            MAX_MEDIA_SIZE = 50 * 1024 * 1024 # 50 MB limit
-            if fm.get("size_bytes", 0) > MAX_MEDIA_SIZE:
+            # Limit check: Images and Audio are sent to API as a whole.
+            # Videos are chunked locally into frames, so original file size is less restrictive.
+            MAX_UPLOAD_SIZE = 50 * 1024 * 1024 # 50 MB limit for single upload
+            
+            if fm["type"] in ("image", "audio") and fm.get("size_bytes", 0) > MAX_UPLOAD_SIZE:
                 m_type = fm.get("type", "file")
                 msg = f"(skipped: {m_type} > 50MB)"
                 print(f"  {dim('–')} {dim(label)} {warn(msg)}")
