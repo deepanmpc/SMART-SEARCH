@@ -81,7 +81,15 @@ def _vector_count() -> int:
 
 def _crawl(folder: str) -> list[dict]:
     files = []
-    for path in Path(folder).rglob("*"):
+    base_path = Path(folder)
+    
+    # Handle single file case
+    if base_path.is_file():
+        paths = [base_path]
+    else:
+        paths = list(base_path.rglob("*"))
+
+    for path in paths:
         if any(p in SKIP_DIRS for p in path.parts):
             continue
         if path.is_file() and path.suffix.lower() in SUPPORTED:
@@ -104,13 +112,13 @@ def _chunk_id(path: str, i: int) -> str:
 
 def cmd_index(folder: str | None = None):
     header()
-    print(bold("Index a folder"))
-    print(dim("Crawls files, extracts text, chunks, embeds and stores vectors.\n"))
+    print(bold("Index a file or folder"))
+    print(dim("Extracts text, chunks, embeds and stores vectors.\n"))
 
     if not folder:
-        folder = input(f"  {info('Folder path')} › ").strip()
+        folder = input(f"  {info('File or Folder path')} › ").strip()
     if not folder:
-        print(warn("No folder given.")); return
+        print(warn("No path given.")); return
 
     folder = os.path.expanduser(folder)
     if not Path(folder).exists():
@@ -123,7 +131,7 @@ def cmd_index(folder: str | None = None):
     spin.done(f"Found {bold(str(len(files)))} files")
 
     if not files:
-        print(warn("No supported files (.pdf .docx .doc .txt)")); return
+        print(warn("No supported files found. Check your file types.")); return
 
     for t, n in Counter(f["type"] for f in files).items():
         print(f"  {dim('·')} {n:4d}  {t}")
