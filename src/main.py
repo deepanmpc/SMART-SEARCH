@@ -103,6 +103,46 @@ def _crawl(folder: str) -> list[dict]:
             })
     return files
 
+def _select_files(all_files: list[dict]) -> list[dict]:
+    if not all_files: return []
+    if len(all_files) == 1: return all_files
+
+    print(f"\n  {bold('Found ' + str(len(all_files)) + ' files.')}")
+    print(f"  {bold(c(CYAN, '  A'))}  Index all files")
+    print(f"  {bold(c(CYAN, '  S'))}  Select specific files")
+    print(f"  {bold(c(CYAN, '  Q'))}  Cancel\n")
+    choice = input(f"  {dim('›')} ").strip().lower()
+
+    if choice == 'a': return all_files
+    if choice == 'q': return []
+    if choice == 's':
+        print(f"\n  {bold('Select files by number (e.g. 1, 3-5):')}\n")
+        # Show first 20 files if too many
+        display_limit = 20
+        for i, f in enumerate(all_files[:display_limit], 1):
+            print(f"  {dim(f'{i:3d}.')} {f['filename']} {dim('(' + f['type'] + ')')}")
+        if len(all_files) > display_limit:
+            print(f"  {dim('... and ' + str(len(all_files) - display_limit) + ' more')}")
+        
+        selection = input(f"\n  {info('Selection')} › ").strip()
+        if not selection: return []
+        
+        indices = []
+        try:
+            for part in selection.split(','):
+                part = part.strip()
+                if '-' in part:
+                    start, end = map(int, part.split('-'))
+                    indices.extend(range(start, end + 1))
+                else:
+                    indices.append(int(part))
+            
+            selected = [all_files[i-1] for i in indices if 1 <= i <= len(all_files)]
+            return selected
+        except Exception:
+            print(warn("  Invalid selection.")); return []
+    return all_files
+
 def _chunk_id(path: str, i: int) -> str:
     return hashlib.md5(f"{path}::{i}".encode()).hexdigest()
 
@@ -127,11 +167,19 @@ def cmd_index(folder: str | None = None):
     # crawl
     spin = Spinner("Crawling…")
     spin.tick()
-    files = _crawl(folder)
-    spin.done(f"Found {bold(str(len(files)))} files")
+    all_found = _crawl(folder)
+    spin.done(f"Found {bold(str(len(all_found)))} potential files")
 
-    if not files:
+    if not all_found:
         print(warn("No supported files found. Check your file types.")); return
+
+    # INTERACTIVE SELECTION
+    files = _select_files(all_found)
+    if not files:
+        print(dim("  Aborted.")); return
+
+    header() # Refresh screen after selection
+    print(bold(f"Indexing {len(files)} file(s)...\n"))
 
     for t, n in Counter(f["type"] for f in files).items():
         print(f"  {dim('·')} {n:4d}  {t}")
