@@ -5,3 +5,6 @@ tika
 faiss-cpu
 numpy
 python-pptx
+fastapi
+uvicorn
+pydantic

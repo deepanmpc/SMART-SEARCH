@@ -1,0 +1,12 @@
+{
+  "name": "smart-search-launcher",
+  "version": "1.0.0",
+  "description": "Spotlight-style AI Launcher for SMART SEARCH",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^30.0.0"
+  }
+}

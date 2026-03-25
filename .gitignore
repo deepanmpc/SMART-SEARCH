@@ -10,3 +10,12 @@
 *.db
 chroma_store/
 tests/
+
+/launcher/node_modules
+backend.log
+launcher.log
+bin/
+obj/
+dist/
+build/
+*.log
