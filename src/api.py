@@ -283,6 +283,9 @@ def run_indexing(folder_path: str):
                 except Exception as e:
                     print(f"Failed text {fm['path']}: {e}")
 
+            # Yield CPU to the OS to prevent kernel_task CPU spikes
+            time_mod.sleep(0.01)
+
         faiss_idx.save(INDEX_PATH)
         INDEX_PROGRESS["processed_files"] = INDEX_PROGRESS["total_files"]
         INDEX_PROGRESS["percentage"] = 100.0
