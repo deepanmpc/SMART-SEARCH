@@ -225,29 +225,65 @@ def cmd_index(folder: str | None = None):
                 skipped += 1
                 continue
 
-            # Multimodal ingestion (one chunk for the whole file)
+            # Multimodal ingestion
             try:
-                with open(fm["path"], "rb") as bf:
-                    data = bf.read()
-                mime_type, _ = mimetypes.guess_type(fm["path"])
-                if not mime_type:
-                    # Fallback common mimes
-                    ext = fm["ext"]
-                    if fm["type"] == "image": mime_type = f"image/{ext[1:]}"
-                    elif fm["type"] == "audio": mime_type = f"audio/{ext[1:]}"
-                    elif fm["type"] == "video": mime_type = f"video/{ext[1:]}"
-                
-                unit = {"type": fm["type"], "data": data, "mime_type": mime_type}
-                vec = embed_unit(unit)
-                if vec is not None:
-                    if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                        faiss_idx = FaissIndex(dimension=len(vec))
+                if fm["type"] == "image":
+                    from ingestion.media_parser import chunk_image
+                    with open(fm["path"], "rb") as bf:
+                        img_bytes = bf.read()
+                    chunks = chunk_image(img_bytes)
                     
-                    vector_ids = faiss_idx.add([vec])
-                    file_id = make_file_id(fm["path"], 0)
-                    insert_chunk(conn, vector_ids[0], file_id, fm, 0, f"[Multimodal {fm['type']}]")
-                    indexed = 1
-                    total_chunks += 1
+                    for idx, c in enumerate(chunks):
+                        unit = {"type": "image", "data": c["data"], "mime_type": c["mime_type"]}
+                        vec = embed_unit(unit)
+                        if vec is not None:
+                            if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
+                                faiss_idx = FaissIndex(dimension=len(vec))
+                            vector_ids = faiss_idx.add([vec])
+                            file_id = make_file_id(fm["path"], idx)
+                            insert_chunk(conn, vector_ids[0], file_id, fm, idx, f"[Image: {c['suffix']}]")
+                            indexed += 1
+                            total_chunks += 1
+
+                elif fm["type"] == "video":
+                    from ingestion.media_parser import chunk_video
+                    chunks = chunk_video(fm["path"], interval_sec=5)
+                    if not chunks:
+                        print(f"  {dim('–')} {dim(label)} {warn('(no frames extracted)')}")
+                        skipped += 1
+                        continue
+                        
+                    for idx, c in enumerate(chunks):
+                        unit = {"type": "image", "data": c["data"], "mime_type": c["mime_type"]}
+                        vec = embed_unit(unit)
+                        if vec is not None:
+                            if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
+                                faiss_idx = FaissIndex(dimension=len(vec))
+                            vector_ids = faiss_idx.add([vec])
+                            file_id = make_file_id(fm["path"], idx)
+                            insert_chunk(conn, vector_ids[0], file_id, fm, idx, f"[Video Frame: {c['suffix']}]")
+                            indexed += 1
+                            total_chunks += 1
+
+                else: # audio
+                    with open(fm["path"], "rb") as bf:
+                        data = bf.read()
+                    mime_type, _ = mimetypes.guess_type(fm["path"])
+                    if not mime_type:
+                        mime_type = f"audio/{fm['ext'][1:]}"
+                    
+                    unit = {"type": "audio", "data": data, "mime_type": mime_type}
+                    vec = embed_unit(unit)
+                    if vec is not None:
+                        if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
+                            faiss_idx = FaissIndex(dimension=len(vec))
+                        
+                        vector_ids = faiss_idx.add([vec])
+                        file_id = make_file_id(fm["path"], 0)
+                        insert_chunk(conn, vector_ids[0], file_id, fm, 0, f"[Audio]")
+                        indexed += 1
+                        total_chunks += 1
+                        
             except Exception as e:
                 print(f"  {err('!')} {label} {warn(f'failed: {e}')}")
                 skipped += 1
