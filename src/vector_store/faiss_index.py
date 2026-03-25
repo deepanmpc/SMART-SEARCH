@@ -12,7 +12,7 @@ import faiss
 class FaissIndex:
     """Wrapper around FAISS IndexFlatIP (cosine similarity via L2 normalization)."""
 
-    def __init__(self, dimension: int = 3072):
+    def __init__(self, dimension: int = 768):
         self.dimension = dimension
         self.index = faiss.IndexFlatIP(dimension)
 
@@ -37,6 +37,7 @@ class FaissIndex:
     def load(self, path: str = "index.faiss") -> bool:
         if Path(path).exists():
             self.index = faiss.read_index(path)
+            self.dimension = self.index.d
             return True
         return False
 
