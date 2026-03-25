@@ -49,3 +49,9 @@ def get_by_vector_ids(conn, vector_ids: List[int]) -> List[Dict[str, Any]]:
 def clear_document(conn, document_path: str):
     conn.execute("DELETE FROM chunks WHERE document_path = ?", (document_path,))
     conn.commit()
+
+
+def is_document_indexed(conn, document_path: str) -> bool:
+    """Check if any chunks exist for the given document path."""
+    row = conn.execute("SELECT 1 FROM chunks WHERE document_path = ? LIMIT 1", (document_path,)).fetchone()
+    return row is not None

@@ -195,7 +195,7 @@ def cmd_index(folder: str | None = None):
     from chunking.chunker import chunk_text
     from embedding.gemini_embedder import embed_unit, make_file_id
     from vector_store.faiss_index import FaissIndex
-    from database.metadata_store import init_db, insert_chunk, clear_document
+    from database.metadata_store import init_db, insert_chunk, clear_document, is_document_indexed
     import mimetypes
 
     conn = init_db(DB_PATH)
@@ -207,6 +207,12 @@ def cmd_index(folder: str | None = None):
 
     for i, fm in enumerate(files):
         label = f"[{i+1}/{len(files)}] {fm['filename']}"
+
+        if is_document_indexed(conn, fm["path"]):
+            print(f"  {dim('–')} {dim(label)} {warn('(already indexed)')}")
+            skipped += 1
+            continue
+
         clear_document(conn, fm["path"])
         indexed = 0
 
