@@ -100,6 +100,7 @@ def _crawl(folder: str) -> list[dict]:
                 "type":     SUPPORTED[path.suffix.lower()],
                 "ext":      path.suffix.lower(),
                 "modified": stat.st_mtime,
+                "size_bytes": stat.st_size,
             })
     return files
 
@@ -210,6 +211,14 @@ def cmd_index(folder: str | None = None):
         indexed = 0
 
         if fm["type"] in ("image", "audio", "video"):
+            MAX_MEDIA_SIZE = 50 * 1024 * 1024 # 50 MB limit
+            if fm.get("size_bytes", 0) > MAX_MEDIA_SIZE:
+                m_type = fm.get("type", "file")
+                msg = f"(skipped: {m_type} > 50MB)"
+                print(f"  {dim('–')} {dim(label)} {warn(msg)}")
+                skipped += 1
+                continue
+
             # Multimodal ingestion (one chunk for the whole file)
             try:
                 with open(fm["path"], "rb") as bf:
