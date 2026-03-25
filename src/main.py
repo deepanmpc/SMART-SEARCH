@@ -202,6 +202,15 @@ def cmd_index(folder: str | None = None):
     faiss_idx = FaissIndex()
     faiss_idx.load(INDEX_PATH)
 
+    # Check for dimension mismatch (Shift to 768d optimization)
+    if faiss_idx.total_vectors > 0 and faiss_idx.dimension != 768:
+        print(f"\n  {err('!')} Index dimension mismatch ({faiss_idx.dimension} vs target 768).")
+        print(f"  To benefit from the new optimizations, please clear your index:")
+        print(f"  {dim('rm index.faiss metadata.db')}")
+        print("  Press Enter to exit…")
+        input()
+        return
+
     total_chunks = skipped = 0
     rule("·")
 
@@ -230,62 +239,56 @@ def cmd_index(folder: str | None = None):
 
             # Multimodal ingestion
             try:
+                from ingestion.media_parser import chunk_image, chunk_video
+                from embedding.gemini_embedder import embed_batch
+
+                media_chunks = []
                 if fm["type"] == "image":
-                    from ingestion.media_parser import chunk_image
                     with open(fm["path"], "rb") as bf:
                         img_bytes = bf.read()
-                    chunks = chunk_image(img_bytes)
-                    
-                    for idx, c in enumerate(chunks):
-                        unit = {"type": "image", "data": c["data"], "mime_type": c["mime_type"]}
-                        vec = embed_unit(unit)
-                        if vec is not None:
-                            if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                                faiss_idx = FaissIndex(dimension=len(vec))
-                            vector_ids = faiss_idx.add([vec])
-                            file_id = make_file_id(fm["path"], idx)
-                            insert_chunk(conn, vector_ids[0], file_id, fm, idx, f"[Image: {c['suffix']}]")
-                            indexed += 1
-                            total_chunks += 1
-
+                    media_chunks = chunk_image(img_bytes)
                 elif fm["type"] == "video":
-                    from ingestion.media_parser import chunk_video
-                    chunks = chunk_video(fm["path"], interval_sec=5)
-                    if not chunks:
-                        print(f"  {dim('–')} {dim(label)} {warn('(no frames extracted)')}")
-                        skipped += 1
-                        continue
-                        
-                    for idx, c in enumerate(chunks):
-                        unit = {"type": "image", "data": c["data"], "mime_type": c["mime_type"]}
-                        vec = embed_unit(unit)
-                        if vec is not None:
-                            if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                                faiss_idx = FaissIndex(dimension=len(vec))
-                            vector_ids = faiss_idx.add([vec])
-                            file_id = make_file_id(fm["path"], idx)
-                            insert_chunk(conn, vector_ids[0], file_id, fm, idx, f"[Video Frame: {c['suffix']}]")
-                            indexed += 1
-                            total_chunks += 1
-
-                else: # audio
+                    media_chunks = chunk_video(fm["path"])
+                elif fm["type"] == "audio":
                     with open(fm["path"], "rb") as bf:
                         data = bf.read()
                     mime_type, _ = mimetypes.guess_type(fm["path"])
-                    if not mime_type:
-                        mime_type = f"audio/{fm['ext'][1:]}"
+                    if not mime_type: mime_type = f"audio/{fm['ext'][1:]}"
+                    media_chunks = [{"type": "audio", "data": data, "mime_type": mime_type, "suffix": "full"}]
+
+                if not media_chunks:
+                    print(f"  {dim('–')} {dim(label)} {warn('(no content extracted)')}")
+                    skipped += 1
+                    continue
+
+                # Batch embed all media chunks for this file
+                # Model limit is 16 items per batch for embed_content (safe side)
+                batch_size = 16
+                for b_idx in range(0, len(media_chunks), batch_size):
+                    batch = media_chunks[b_idx : b_idx + batch_size]
+                    units = []
+                    for c in batch:
+                        if fm["type"] == "audio":
+                            units.append({"type": "audio", "data": c["data"], "mime_type": c["mime_type"]})
+                        else:
+                            # Video chunks are frames (images)
+                            units.append({"type": "image", "data": c["data"], "mime_type": c["mime_type"]})
                     
-                    unit = {"type": "audio", "data": data, "mime_type": mime_type}
-                    vec = embed_unit(unit)
-                    if vec is not None:
-                        if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                            faiss_idx = FaissIndex(dimension=len(vec))
-                        
-                        vector_ids = faiss_idx.add([vec])
-                        file_id = make_file_id(fm["path"], 0)
-                        insert_chunk(conn, vector_ids[0], file_id, fm, 0, f"[Audio]")
-                        indexed += 1
-                        total_chunks += 1
+                    vecs = embed_batch(units)
+                    
+                    for i, (c, vec) in enumerate(zip(batch, vecs)):
+                        idx = b_idx + i
+                        if vec is not None:
+                            if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
+                                from vector_store.faiss_index import FaissIndex
+                                faiss_idx = FaissIndex(dimension=len(vec))
+                            
+                            vector_ids = faiss_idx.add([vec])
+                            file_id = make_file_id(fm["path"], idx)
+                            desc = f"[{fm['type'].capitalize()}: {c['suffix']}]"
+                            insert_chunk(conn, vector_ids[0], file_id, fm, idx, desc)
+                            indexed += 1
+                            total_chunks += 1
                         
             except Exception as e:
                 print(f"  {err('!')} {label} {warn(f'failed: {e}')}")
@@ -305,20 +308,26 @@ def cmd_index(folder: str | None = None):
                 skipped += 1
                 continue
 
-            for ci, chunk in enumerate(chunks):
-                unit = {"type": "text", "data": chunk}
-                vec = embed_unit(unit)
-                if vec is None:
-                    continue
-
-                if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                    faiss_idx = FaissIndex(dimension=len(vec))
-
-                vector_ids = faiss_idx.add([vec])
-                file_id = make_file_id(fm["path"], ci)
-                insert_chunk(conn, vector_ids[0], file_id, fm, ci, chunk)
-                indexed += 1
-                total_chunks += 1
+            # Batch embed text chunks
+            batch_size = 50 
+            for b_idx in range(0, len(chunks), batch_size):
+                batch = chunks[b_idx : b_idx + batch_size]
+                units = [{"type": "text", "data": c} for c in batch]
+                
+                vecs = embed_batch(units)
+                
+                for i, (chunk_text_content, vec) in enumerate(zip(batch, vecs)):
+                    idx = b_idx + i
+                    if vec is not None:
+                        if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
+                            from vector_store.faiss_index import FaissIndex
+                            faiss_idx = FaissIndex(dimension=len(vec))
+                            
+                        vector_ids = faiss_idx.add([vec])
+                        file_id = make_file_id(fm["path"], idx)
+                        insert_chunk(conn, vector_ids[0], file_id, fm, idx, chunk_text_content)
+                        indexed += 1
+                        total_chunks += 1
 
         if indexed > 0:
             print(f"  {ok('✓')} {label} {dim(f'({indexed} chunks)')}")
