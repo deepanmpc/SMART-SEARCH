@@ -55,3 +55,15 @@ def is_document_indexed(conn, document_path: str) -> bool:
     """Check if any chunks exist for the given document path."""
     row = conn.execute("SELECT 1 FROM chunks WHERE document_path = ? LIMIT 1", (document_path,)).fetchone()
     return row is not None
+
+def search_filenames(conn, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+    """SQL-based filename search as a fallback/bonus."""
+    # We use a distinct to get one representative chunk per matching file
+    query_param = f"%{query}%"
+    rows = conn.execute("""
+        SELECT * FROM chunks 
+        WHERE document_name LIKE ? 
+        GROUP BY document_path
+        LIMIT ?
+    """, (query_param, limit)).fetchall()
+    return [dict(row) for row in rows]

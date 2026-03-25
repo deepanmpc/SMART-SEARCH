@@ -68,6 +68,11 @@ function hideLoading() {
     loadingIndicator.classList.add('hidden');
 }
 
+function getFileIcon(fileType) {
+    const icons = { image: '🖼️', video: '🎬', audio: '🎵', pdf: '📕', docx: '📝', text: '📄' };
+    return icons[fileType] || '📄';
+}
+
 function displayResults(results) {
     resultsContainer.innerHTML = '';
     if (results.length === 0) {
@@ -76,12 +81,23 @@ function displayResults(results) {
         results.forEach(res => {
             const div = document.createElement('div');
             div.className = 'result-item';
+            const icon = getFileIcon(res.file_type);
+            const score = (res.score * 100).toFixed(0);
+            
+            let snippet = res.chunk_text || '';
+            // For media, show a nice label instead of the empty chunk_text
+            if (!snippet && res.file_type) {
+                if (res.file_type === 'image') snippet = '🖼️ Image file — click to open';
+                else if (res.file_type === 'video') snippet = '🎬 Video file — click to open';
+                else if (res.file_type === 'audio') snippet = '🎵 Audio file — click to open';
+            }
+            
             div.innerHTML = `
                 <div class="result-title">
-                    <span>📄 ${res.document_name}</span>
-                    <span class="result-score">${(res.score * 100).toFixed(0)}%</span>
+                    <span>${icon} ${res.document_name}</span>
+                    <span class="result-score">${score}%</span>
                 </div>
-                <div class="result-snippet">${res.chunk_text || ''}</div>
+                <div class="result-snippet">${snippet}</div>
             `;
             div.onclick = () => {
                 if (res.file_path) {

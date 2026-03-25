@@ -60,8 +60,8 @@ def get_stats():
 
 @app.post("/search", response_model=SearchResponse)
 def search_endpoint(req: SearchRequest):
-    # Increase top_k internally to allow for filtering
-    search_k = req.top_k * 3 if req.file_type and req.file_type != "all" else req.top_k
+    # Increase top_k internally to allow for filtering (e.g. 8 * 25 = 200)
+    search_k = req.top_k * 25 if req.file_type and req.file_type != "all" else req.top_k
     
     results = semantic_search(req.query, top_k=search_k, index_path=INDEX_PATH, db_path=DB_PATH)
     
