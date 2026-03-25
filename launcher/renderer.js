@@ -23,6 +23,14 @@ let debounceTimer;
 let progressPollingInterval;
 let activeFilter = 'all';
 
+const PLACEHOLDERS = {
+    all: 'Applications',
+    text: 'Search docs',
+    image: 'Search pics',
+    video: 'Search video',
+    audio: 'Search audio'
+};
+
 // Fetch stats on load
 async function fetchStats() {
     try {
@@ -266,13 +274,31 @@ clearIndexBtn.addEventListener('click', deleteIndex);
 
 filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
-        filterChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        activeFilter = chip.getAttribute('data-type');
-        const val = searchInput.value.trim();
-        if (val) handleCommand(val);
+        setActiveFilter(chip.getAttribute('data-type'));
     });
 });
+
+function setActiveFilter(type) {
+    activeFilter = type;
+    filterChips.forEach(c => {
+        c.classList.toggle('active', c.getAttribute('data-type') === type);
+    });
+    searchInput.placeholder = PLACEHOLDERS[type] || 'Applications';
+    
+    const val = searchInput.value.trim();
+    if (val) handleCommand(val);
+}
+
+function cycleFilter(direction) {
+    const types = Object.keys(PLACEHOLDERS);
+    let currentIndex = types.indexOf(activeFilter);
+    if (direction === 'next') {
+        currentIndex = (currentIndex + 1) % types.length;
+    } else {
+        currentIndex = (currentIndex - 1 + types.length) % types.length;
+    }
+    setActiveFilter(types[currentIndex]);
+}
 
 searchInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
@@ -299,6 +325,10 @@ searchInput.addEventListener('keydown', (e) => {
         searchInput.value = '';
         resultsContainer.classList.add('hidden');
         updateWindowSize();
+    } else if (e.key === 'ArrowRight' && searchInput.value === '') {
+        cycleFilter('next');
+    } else if (e.key === 'ArrowLeft' && searchInput.value === '') {
+        cycleFilter('prev');
     }
 });
 

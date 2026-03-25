@@ -7,18 +7,21 @@
 </head>
 <body>
   <div class="launcher-container">
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Search, index, or ask..." autofocus autocomplete="off" spellcheck="false">
+    <div class="top-row">
+      <div class="search-bar pill">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Applications" autofocus autocomplete="off" spellcheck="false">
+        <div class="shortcut-badge">⌘ 1</div>
+        <div id="loadingIndicator" class="hidden">...</div>
+      </div>
+      <div class="filter-dock">
+          <div class="filter-chip active" data-type="all" title="All Files">🔍</div>
+          <div class="filter-chip" data-type="text" title="Documents">📄</div>
+          <div class="filter-chip" data-type="image" title="Images">🖼️</div>
+          <div class="filter-chip" data-type="video" title="Videos">🎬</div>
+          <div class="filter-chip" data-type="audio" title="Audio">🎵</div>
+      </div>
       <button id="indexFolderBtn" title="Index a folder">📁</button>
-      <div id="loadingIndicator" class="hidden">Wait...</div>
-    </div>
-
-    <div class="search-filters">
-        <div class="filter-chip active" data-type="all">All</div>
-        <div class="filter-chip" data-type="text">Text</div>
-        <div class="filter-chip" data-type="image">Images</div>
-        <div class="filter-chip" data-type="video">Videos</div>
-        <div class="filter-chip" data-type="audio">Audio</div>
     </div>
     
     <div id="indexingOverlay" class="hidden">
