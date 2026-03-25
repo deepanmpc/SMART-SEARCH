@@ -9,4 +9,4 @@
 *.index
 *.db
 chroma_store/
-/Users/deepandee/Desktop/SMART_SEARCH_mcp/tests
+tests/
