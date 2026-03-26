@@ -9,7 +9,13 @@ from vector_store.faiss_index import FaissIndex
 from database.metadata_store import init_db, get_by_vector_ids, search_filenames
 
 
-def search(query: str, top_k: int = 5, index_path: str = "index.faiss", db_path: str = "metadata.db") -> List[Dict[str, Any]]:
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent.parent
+DEFAULT_INDEX = str(ROOT / "index.faiss")
+DEFAULT_DB = str(ROOT / "metadata.db")
+
+def search(query: str, top_k: int = 5, index_path: str = DEFAULT_INDEX, db_path: str = DEFAULT_DB) -> List[Dict[str, Any]]:
     """Find unique files using hybrid search (SQL filename + FAISS semantic)."""
     conn = init_db(db_path)
     
@@ -21,7 +27,8 @@ def search(query: str, top_k: int = 5, index_path: str = "index.faiss", db_path:
     sql_hits = search_filenames(conn, query, limit=top_k * 2)
     for r in sql_hits:
         path = r["document_path"]
-        r["score"] = 1.2  # Base bonus for filename match
+        # Bug 3: Lower score bonus so images can surface
+        r["score"] = 0.7  # Base bonus for filename match
         # Extra bonus for exact filename match
         if query_lower == r["document_name"].lower().split(".")[0]:
             r["score"] = 1.5

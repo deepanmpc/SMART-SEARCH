@@ -94,7 +94,9 @@ function displayResults(results) {
             const score = (res.score * 100).toFixed(0);
             
             let snippet = res.chunk_text || '';
-            if (!snippet && res.file_type) {
+            if (res.content_type === 'image') {
+                snippet = `<img src="file://${res.file_path}" class="result-thumb" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22><rect width=%2224%22 height=%2224%22 fill=%22%23333%22/><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2210%22>🖼️</text></svg>'">`;
+            } else if (!snippet && res.file_type) {
                 if (res.file_type === 'image') snippet = '🖼️ Image file — press Enter to preview';
                 else if (res.file_type === 'video') snippet = '🎬 Video file — press Enter to preview';
                 else if (res.file_type === 'audio') snippet = '🎵 Audio file — press Enter to preview';
@@ -105,7 +107,7 @@ function displayResults(results) {
                     <span><span class="res-icon-bg">${icon}</span> ${res.document_name}</span>
                     <span class="result-score">${score}%</span>
                 </div>
-                <div class="result-snippet">${snippet}</div>
+                <div class="result-snippet ${res.content_type === 'image' ? 'has-thumb' : ''}">${snippet}</div>
             `;
             div.onclick = () => {
                 selectResult(i);

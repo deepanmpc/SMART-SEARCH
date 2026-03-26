@@ -8,8 +8,9 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     document_name: str
-    file_path: str
+    file_path: Optional[str] = None
     file_type: str
+    content_type: str = "text"
     chunk_text: Optional[str]
     score: float
 
