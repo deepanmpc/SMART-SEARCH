@@ -6,7 +6,7 @@ import sqlite3
 from typing import List, Dict, Any
 
 from pathlib import Path
-DB_PATH = str(Path(__file__).parent.parent / "metadata.db")
+DB_PATH = str(Path(__file__).parent.parent.parent / "metadata.db")
 
 
 def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:

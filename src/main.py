@@ -57,8 +57,9 @@ class Spinner:
 from crawler import SUPPORTED_EXTENSIONS as SUPPORTED
 SKIP_DIRS   = {".git", ".venv", "__pycache__", "node_modules", ".DS_Store"}
 _SRC = Path(__file__).parent
-INDEX_PATH = str(_SRC / "index.faiss")
-DB_PATH = str(_SRC / "metadata.db")
+_ROOT = _SRC.parent
+INDEX_PATH = str(_ROOT / "index.faiss")
+DB_PATH = str(_ROOT / "metadata.db")
 CHUNK_WORDS = 100
 OVERLAP     = 25
 

@@ -74,9 +74,10 @@ def get_stats():
 
 @app.post("/search", response_model=SearchResponse)
 def search_endpoint(req: SearchRequest):
-    # Bug 4: Increase fetching multiplier for images to ensure variety after deduplication
-    multiplier = 50 if req.file_type == "image" else 25
-    search_k = req.top_k * multiplier if req.file_type and req.file_type != "all" else req.top_k
+    # Optimize: Increase fetching multiplier for all queries to ensure images surface, 
+    # even when text scores highly.
+    multiplier = 50 if req.file_type == "image" else 5
+    search_k = req.top_k * multiplier
     
     results = semantic_search(req.query, top_k=search_k, index_path=INDEX_PATH, db_path=DB_PATH)
     

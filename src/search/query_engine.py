@@ -11,7 +11,7 @@ from database.metadata_store import init_db, get_by_vector_ids, search_filenames
 
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent
+ROOT = Path(__file__).parent.parent.parent
 DEFAULT_INDEX = str(ROOT / "index.faiss")
 DEFAULT_DB = str(ROOT / "metadata.db")
 
