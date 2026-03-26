@@ -7,11 +7,18 @@ let mainWindow;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
-    height: 140,
+    height: 180,
+    minHeight: 120,
+    minWidth: 600,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     hasShadow: true,
+    center: true,
+    movable: true,
+    resizable: true,
+    vibrancy: 'under-window',
+    visualEffectState: 'active',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -19,9 +26,7 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
-  // mainWindow.hide();
-
-  // mainWindow.webContents.openDevTools({ mode: 'detach' });
+  // mainWindow.center(); // Ensure it starts in the middle
 }
 
 app.whenReady().then(() => {

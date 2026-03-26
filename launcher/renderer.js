@@ -28,11 +28,11 @@ let currentResults = [];
 let selectedIndex = -1;
 
 const PLACEHOLDERS = {
-    all: 'Applications',
-    text: 'Search docs',
-    image: 'Search pics',
-    video: 'Search video',
-    audio: 'Search audio'
+    all: '✦ Applications',
+    text: '≣ Search docs',
+    image: '▣ Search pics',
+    video: '🎞️ Search video',
+    audio: '≋ Search audio'
 };
 
 // Fetch stats on load
@@ -56,22 +56,29 @@ function updateWindowSize() {
     setTimeout(() => {
         const width = 900;
         const container = document.querySelector('.launcher-container');
-        // Increase padding to ensure all floating shadows are visible
-        const height = container.scrollHeight + 60; 
+        // Standard padding for macOS shadows and floating effect
+        const height = container.scrollHeight + 100; 
         ipcRenderer.send('resize-window', width, height);
-    }, 100);
+    }, 50);
 }
 
 function showLoading() {
-    document.querySelector('.search-bar').classList.add('searching');
+    document.querySelector('.top-row').classList.add('searching');
 }
 
 function hideLoading() {
-    document.querySelector('.search-bar').classList.remove('searching');
+    document.querySelector('.top-row').classList.remove('searching');
 }
 
 function getFileIcon(fileType) {
-    const icons = { image: '🖼️', video: '🎬', audio: '🎵', pdf: '📕', docx: '📝', text: '📄' };
+    const icons = { 
+        image: '▣', 
+        video: '🎞️', 
+        audio: '≋', 
+        pdf: '📕', 
+        docx: '≣', 
+        text: '📄' 
+    };
     return icons[fileType] || '📄';
 }
 
@@ -102,10 +109,12 @@ function displayResults(results) {
             
             div.innerHTML = `
                 <div class="result-title">
-                    <span><span class="res-icon-bg">${icon}</span> ${res.document_name}</span>
+                    <div class="result-name-wrapper">
+                        <span class="res-icon-bg">${icon}</span>
+                        <span class="result-name-text">${res.document_name}</span>
+                    </div>
                     <span class="result-score">${score}%</span>
                 </div>
-                ${res.content_type === 'image' ? `<div class="result-snippet has-thumb">${snippet}</div>` : ''}
             `;
             div.onclick = () => {
                 selectResult(i);
@@ -145,7 +154,7 @@ function selectResult(index) {
     } else if (res.file_type === 'video') {
         mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" controls autoplay muted loop></video>`;
     } else if (res.file_type === 'audio') {
-        mediaHtml = `<audio src="file://${res.file_path}" controls style="width:100%; margin-bottom: 16px;" autoplay></audio>`;
+        mediaHtml = `<audio src="file://${res.file_path}" controls autoplay style="margin-bottom: 20px;"></audio>`;
     }
     
     resultPreview.innerHTML = `
@@ -414,9 +423,12 @@ searchInput.addEventListener('keydown', (e) => {
     } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         if (currentResults.length > 0) selectResult(selectedIndex - 1);
-    } else if (e.key === 'ArrowRight' && searchInput.value === '') {
+    } else if (e.key === 'ArrowRight' && (searchInput.value === '' || e.ctrlKey || e.metaKey)) {
         cycleFilter('next');
-    } else if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
+    } else if (e.key === 'ArrowLeft' && (searchInput.value === '' || e.ctrlKey || e.metaKey)) {
+        cycleFilter('prev');
+    }
+ else if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         const isResultsVisible = !resultsContainer.classList.contains('hidden');
         if (isResultsVisible && currentResults.length > 0 && selectedIndex >= 0) {
