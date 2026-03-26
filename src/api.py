@@ -6,6 +6,8 @@ from collections import Counter
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+from google.genai.errors import ClientError
 
 # Import local modules
 from api_models import SearchRequest, SearchResponse, SearchResult, IndexRequest, IndexResponse, StatsResponse, AskRequest, AskResponse, IndexStatusResponse
@@ -27,6 +29,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(ClientError)
+async def genai_exception_handler(request, exc: ClientError):
+    if exc.status_code == 429:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Gemini API Quota Exceeded (1000 requests/day). Please wait a few hours or check your billing."}
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Gemini API Error: {exc}"}
+    )
 
 # Mock subscription
 CURRENT_PLAN = "Free"
@@ -60,8 +74,8 @@ def get_stats():
 
 @app.post("/search", response_model=SearchResponse)
 def search_endpoint(req: SearchRequest):
-    # Increase top_k internally to allow for filtering
-    search_k = req.top_k * 3 if req.file_type and req.file_type != "all" else req.top_k
+    # Increase top_k internally to allow for filtering (e.g. 8 * 25 = 200)
+    search_k = req.top_k * 25 if req.file_type and req.file_type != "all" else req.top_k
     
     results = semantic_search(req.query, top_k=search_k, index_path=INDEX_PATH, db_path=DB_PATH)
     
@@ -258,6 +272,9 @@ def run_indexing(folder_path: str):
                                 total_chunks_added += 1
                 except Exception as e:
                     print(f"Failed media {fm['path']}: {e}")
+                    if "429" in str(e) or "quota" in str(e).lower():
+                        print("!!! Quota exhausted. Stopping indexing. !!!")
+                        break
             else:
                 try:
                     result = parse_document(fm["path"])
@@ -282,6 +299,12 @@ def run_indexing(folder_path: str):
                                 total_chunks_added += 1
                 except Exception as e:
                     print(f"Failed text {fm['path']}: {e}")
+                    if "429" in str(e) or "quota" in str(e).lower():
+                        print("!!! Quota exhausted. Stopping indexing. !!!")
+                        break
+
+            # Yield CPU to the OS to prevent kernel_task CPU spikes
+            time_mod.sleep(0.01)
 
         faiss_idx.save(INDEX_PATH)
         INDEX_PROGRESS["processed_files"] = INDEX_PROGRESS["total_files"]

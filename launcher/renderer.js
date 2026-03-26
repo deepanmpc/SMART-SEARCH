@@ -4,6 +4,8 @@ const searchInput = document.getElementById('searchInput');
 const indexFolderBtn = document.getElementById('indexFolderBtn');
 const clearIndexBtn = document.getElementById('clearIndexBtn');
 const resultsContainer = document.getElementById('resultsContainer');
+const resultsList = document.getElementById('resultsList');
+const resultPreview = document.getElementById('resultPreview');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const planText = document.getElementById('planText');
 const progressBar = document.getElementById('progressBar');
@@ -22,6 +24,16 @@ const API_URL = 'http://localhost:8000';
 let debounceTimer;
 let progressPollingInterval;
 let activeFilter = 'all';
+let currentResults = [];
+let selectedIndex = -1;
+
+const PLACEHOLDERS = {
+    all: 'Applications',
+    text: 'Search docs',
+    image: 'Search pics',
+    video: 'Search video',
+    audio: 'Search audio'
+};
 
 // Fetch stats on load
 async function fetchStats() {
@@ -53,48 +65,109 @@ function updateWindowSize() {
 }
 
 function showLoading() {
-    loadingIndicator.classList.remove('hidden');
+    document.querySelector('.search-bar').classList.add('searching');
 }
 
 function hideLoading() {
-    loadingIndicator.classList.add('hidden');
+    document.querySelector('.search-bar').classList.remove('searching');
+}
+
+function getFileIcon(fileType) {
+    const icons = { image: '🖼️', video: '🎬', audio: '🎵', pdf: '📕', docx: '📝', text: '📄' };
+    return icons[fileType] || '📄';
 }
 
 function displayResults(results) {
-    resultsContainer.innerHTML = '';
+    currentResults = results;
+    resultsList.innerHTML = '';
+    resultPreview.innerHTML = '';
+    
     if (results.length === 0) {
-        resultsContainer.innerHTML = '<div class="info-box">No results found.</div>';
+        resultsList.innerHTML = '<div class="info-box">No results found.</div>';
+        selectedIndex = -1;
     } else {
-        results.forEach(res => {
+        results.forEach((res, i) => {
             const div = document.createElement('div');
             div.className = 'result-item';
+            div.id = `result-item-${i}`;
+            const icon = getFileIcon(res.file_type);
+            const score = (res.score * 100).toFixed(0);
+            
+            let snippet = res.chunk_text || '';
+            if (!snippet && res.file_type) {
+                if (res.file_type === 'image') snippet = '🖼️ Image file — press Enter to preview';
+                else if (res.file_type === 'video') snippet = '🎬 Video file — press Enter to preview';
+                else if (res.file_type === 'audio') snippet = '🎵 Audio file — press Enter to preview';
+            }
+            
             div.innerHTML = `
                 <div class="result-title">
-                    <span>📄 ${res.document_name}</span>
-                    <span class="result-score">${(res.score * 100).toFixed(0)}%</span>
+                    <span><span class="res-icon-bg">${icon}</span> ${res.document_name}</span>
+                    <span class="result-score">${score}%</span>
                 </div>
-                <div class="result-snippet">${res.chunk_text || ''}</div>
+                <div class="result-snippet">${snippet}</div>
             `;
             div.onclick = () => {
+                selectResult(i);
                 if (res.file_path) {
                     ipcRenderer.send('open-file', res.file_path);
                 }
             };
-            resultsContainer.appendChild(div);
+            resultsList.appendChild(div);
         });
+        selectResult(0);
     }
     resultsContainer.classList.remove('hidden');
     updateWindowSize();
 }
 
+function selectResult(index) {
+    if (index < 0 || index >= currentResults.length) return;
+    
+    if (selectedIndex >= 0) {
+        const oldEl = document.getElementById(`result-item-${selectedIndex}`);
+        if (oldEl) oldEl.classList.remove('selected');
+    }
+    
+    selectedIndex = index;
+    const newEl = document.getElementById(`result-item-${selectedIndex}`);
+    if (newEl) {
+        newEl.classList.add('selected');
+        newEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    const res = currentResults[index];
+    const icon = getFileIcon(res.file_type);
+    
+    let mediaHtml = `<div class="preview-icon-large">${icon}</div>`;
+    if (res.file_type === 'image') {
+        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
+    } else if (res.file_type === 'video') {
+        mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" controls autoplay muted loop></video>`;
+    } else if (res.file_type === 'audio') {
+        mediaHtml = `<audio src="file://${res.file_path}" controls style="width:100%; margin-bottom: 16px;" autoplay></audio>`;
+    }
+    
+    resultPreview.innerHTML = `
+        ${mediaHtml}
+        <div class="preview-title">${res.document_name}</div>
+        <div class="preview-meta">${(res.score * 100).toFixed(0)}% Match • ${res.file_type.toUpperCase()}</div>
+        ${res.chunk_text ? `<div class="preview-snippet">${res.chunk_text}</div>` : ''}
+    `;
+}
+
 function displayAnswer(answer) {
-    resultsContainer.innerHTML = `<div class="answer-box">🤖 ${answer}</div>`;
+    currentResults = [];
+    resultsList.innerHTML = `<div class="answer-box">🤖 ${answer}</div>`;
+    resultPreview.innerHTML = '';
     resultsContainer.classList.remove('hidden');
     updateWindowSize();
 }
 
 function displayInfo(message) {
-    resultsContainer.innerHTML = `<div class="info-box">${message}</div>`;
+    currentResults = [];
+    resultsList.innerHTML = `<div class="info-box">${message}</div>`;
+    resultPreview.innerHTML = '';
     resultsContainer.classList.remove('hidden');
     updateWindowSize();
 }
@@ -157,7 +230,9 @@ function startPollingProgress() {
 
 async function handleCommand(val) {
     if (!val) {
-        resultsContainer.innerHTML = '';
+        currentResults = [];
+        resultsList.innerHTML = '';
+        resultPreview.innerHTML = '';
         resultsContainer.classList.add('hidden');
         updateWindowSize();
         return;
@@ -206,12 +281,18 @@ async function handleCommand(val) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: query, top_k: 8, file_type: activeFilter })
         });
+        if (res.status === 429) {
+            hideLoading();
+            const data = await res.json();
+            displayInfo(`⚠️ Quota Exceeded: ${data.detail || 'The 1000-request Gemini free limit has been reached.'}`);
+            return;
+        }
         const data = await res.json();
         hideLoading();
         displayResults(data.results);
     } catch (e) {
         hideLoading();
-        displayInfo('❌ Search API error.');
+        displayInfo('❌ Search API error. Check if backend is running.');
     }
 }
 
@@ -266,19 +347,39 @@ clearIndexBtn.addEventListener('click', deleteIndex);
 
 filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
-        filterChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        activeFilter = chip.getAttribute('data-type');
-        const val = searchInput.value.trim();
-        if (val) handleCommand(val);
+        setActiveFilter(chip.getAttribute('data-type'));
     });
 });
+
+function setActiveFilter(type) {
+    activeFilter = type;
+    filterChips.forEach(c => {
+        c.classList.toggle('active', c.getAttribute('data-type') === type);
+    });
+    searchInput.placeholder = PLACEHOLDERS[type] || 'Applications';
+    
+    const val = searchInput.value.trim();
+    if (val) handleCommand(val);
+}
+
+function cycleFilter(direction) {
+    const types = Object.keys(PLACEHOLDERS);
+    let currentIndex = types.indexOf(activeFilter);
+    if (direction === 'next') {
+        currentIndex = (currentIndex + 1) % types.length;
+    } else {
+        currentIndex = (currentIndex - 1 + types.length) % types.length;
+    }
+    setActiveFilter(types[currentIndex]);
+}
 
 searchInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
     const val = e.target.value.trim();
     if (!val) {
-        resultsContainer.innerHTML = '';
+        currentResults = [];
+        resultsList.innerHTML = '';
+        resultPreview.innerHTML = '';
         resultsContainer.classList.add('hidden');
         updateWindowSize();
         return;
@@ -293,12 +394,28 @@ searchInput.addEventListener('input', (e) => {
 searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         clearTimeout(debounceTimer);
-        handleCommand(e.target.value.trim());
+        const val = e.target.value.trim();
+        const isResultsVisible = !resultsContainer.classList.contains('hidden');
+        if (isResultsVisible && currentResults.length > 0 && selectedIndex >= 0 && !val.startsWith('index ') && !val.startsWith('ask ') && val !== 'status') {
+            ipcRenderer.send('open-file', currentResults[selectedIndex].file_path);
+        } else {
+            handleCommand(val);
+        }
     } else if (e.key === 'Escape') {
         ipcRenderer.send('hide-window');
         searchInput.value = '';
         resultsContainer.classList.add('hidden');
         updateWindowSize();
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentResults.length > 0) selectResult(selectedIndex + 1);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentResults.length > 0) selectResult(selectedIndex - 1);
+    } else if (e.key === 'ArrowRight' && searchInput.value === '') {
+        cycleFilter('next');
+    } else if (e.key === 'ArrowLeft' && searchInput.value === '') {
+        cycleFilter('prev');
     }
 });
 

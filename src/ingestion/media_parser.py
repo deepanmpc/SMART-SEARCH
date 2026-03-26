@@ -48,49 +48,66 @@ def chunk_image(image_bytes: bytes, max_dim: int = 1024, overlap: int = 256) -> 
 def chunk_video(video_path: str, threshold: float = 20.0, min_interval: int = 2, max_interval: int = 15) -> list[dict]:
     """
     Extracts frames using scene change detection.
-    Splits video into chunks only when pixel differences exceed `threshold`.
-    Ensures a frame is taken at most every `max_interval` and at least every `min_interval`.
+    Optimized for CPU: Skips decoding frames using grab(), downscales frames to 128x128
+    before computing differences to avoid heavy Numpy operations.
     """
     import numpy as np
+    import cv2
     chunks = []
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened(): return chunks
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    # Evaluate a frame roughly 4 times per min_interval
+    frame_jump = max(1, int(fps * (min_interval / 4.0)))
+    
     last_frame = None
     last_extracted_time = -min_interval
     frame_count = 0
 
     while True:
-        success, frame = cap.read()
+        # Fast-forward without decoding (saves immense CPU)
+        success = cap.grab()
         if not success: break
         
-        current_time = frame_count / fps
-        time_since_last = current_time - last_extracted_time
-        
-        # Decide if we should extract this frame
-        extract = False
-        if time_since_last >= min_interval:
-            if time_since_last >= max_interval:
-                extract = True  # Fallback for static scenes
-            elif last_frame is not None:
-                # Simple scene change detection: mean absolute difference
-                diff = cv2.absdiff(frame, last_frame)
-                score = np.mean(diff)
-                if score > threshold:
+        # Only decode the frame when we land on our jump interval
+        if frame_count % frame_jump == 0:
+            success, frame = cap.retrieve()
+            if not success: break
+            
+            current_time = frame_count / fps
+            time_since_last = current_time - last_extracted_time
+            
+            # Downscale for extremely fast pixel operations
+            small_frame = cv2.resize(frame, (128, 128))
+            
+            extract = False
+            if time_since_last >= min_interval:
+                if time_since_last >= max_interval:
+                    extract = True  # Fallback for static scenes
+                elif last_frame is not None:
+                    diff = cv2.absdiff(small_frame, last_frame)
+                    score = np.mean(diff)
+                    if score > threshold:
+                        extract = True
+                else:
                     extract = True
 
-        if extract or last_frame is None:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if ret:
-                chunks.append({
-                    "data": buffer.tobytes(),
-                    "mime_type": "image/jpeg",
-                    "suffix": f"sec_{int(current_time)}"
-                })
-                last_frame = frame.copy()
-                last_extracted_time = current_time
-        
+            if extract:
+                # Retain the high-quality original frame for the embedding chunk
+                ret, buffer = cv2.imencode('.jpg', frame)
+                if ret:
+                    chunks.append({
+                        "data": buffer.tobytes(),
+                        "mime_type": "image/jpeg",
+                        "suffix": f"sec_{int(current_time)}"
+                    })
+                    last_frame = small_frame
+                    last_extracted_time = current_time
+            elif time_since_last >= 1.0 and last_frame is not None:
+                # Keep updating our baseline reference
+                last_frame = small_frame
+                
         frame_count += 1
     
     cap.release()
