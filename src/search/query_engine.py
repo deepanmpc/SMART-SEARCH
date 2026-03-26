@@ -11,7 +11,7 @@ from database.metadata_store import init_db, get_by_vector_ids, search_filenames
 
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent.parent
+ROOT = Path(__file__).parent.parent
 DEFAULT_INDEX = str(ROOT / "index.faiss")
 DEFAULT_DB = str(ROOT / "metadata.db")
 
@@ -27,7 +27,8 @@ def search(query: str, top_k: int = 5, index_path: str = DEFAULT_INDEX, db_path:
     sql_hits = search_filenames(conn, query, limit=top_k * 2)
     for r in sql_hits:
         path = r["document_path"]
-        r["score"] = 1.2  # Base bonus for filename match
+        # Bug 3: Lower score bonus so images can surface
+        r["score"] = 0.7  # Base bonus for filename match
         # Extra bonus for exact filename match
         if query_lower == r["document_name"].lower().split(".")[0]:
             r["score"] = 1.5

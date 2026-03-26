@@ -74,8 +74,9 @@ def get_stats():
 
 @app.post("/search", response_model=SearchResponse)
 def search_endpoint(req: SearchRequest):
-    # Increase top_k internally to allow for filtering (e.g. 8 * 25 = 200)
-    search_k = req.top_k * 25 if req.file_type and req.file_type != "all" else req.top_k
+    # Bug 4: Increase fetching multiplier for images to ensure variety after deduplication
+    multiplier = 50 if req.file_type == "image" else 25
+    search_k = req.top_k * multiplier if req.file_type and req.file_type != "all" else req.top_k
     
     results = semantic_search(req.query, top_k=search_k, index_path=INDEX_PATH, db_path=DB_PATH)
     
@@ -145,12 +146,14 @@ def ask_endpoint(req: AskRequest):
     sources = []
     for i, r in enumerate(filtered_results, 1):
         text = r.get("chunk_text", "")
-        file_path = r.get("file_path", "Unknown")
+        # Bug 1: Use document_path instead of file_path
+        file_path = r.get("document_path", "Unknown")
         context_parts.append(f"[Source {i}: {file_path}]\n{text}\n")
         sources.append(SearchResult(
             document_name=r.get("document_name", ""),
             file_path=file_path,
             file_type=r.get("file_type", ""),
+            content_type="image" if r.get("file_type") == "image" else "video" if r.get("file_type") == "video" else "audio" if r.get("file_type") == "audio" else "text",
             chunk_text=text,
             score=r.get("score", 0.0)
         ))
