@@ -56,8 +56,9 @@ class Spinner:
 # ── constants ─────────────────────────────────────────────────────────────────
 from crawler import SUPPORTED_EXTENSIONS as SUPPORTED
 SKIP_DIRS   = {".git", ".venv", "__pycache__", "node_modules", ".DS_Store"}
-INDEX_PATH  = "index.faiss"
-DB_PATH     = "metadata.db"
+ROOT = Path(__file__).parent.parent
+INDEX_PATH = str(ROOT / "index.faiss")
+DB_PATH = str(ROOT / "metadata.db")
 CHUNK_WORDS = 100
 OVERLAP     = 25
 

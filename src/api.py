@@ -99,8 +99,9 @@ def search_endpoint(req: SearchRequest):
                 
         out.append(SearchResult(
             document_name=r.get("document_name", ""),
-            file_path=r.get("file_path", ""),
+            file_path=r.get("document_path", ""),
             file_type=r_type,
+            content_type="image" if r_type == "image" else "video" if r_type == "video" else "audio" if r_type == "audio" else "text",
             chunk_text=r.get("chunk_text", ""),
             score=r.get("score", 0.0)
         ))
