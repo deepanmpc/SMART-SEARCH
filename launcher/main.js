@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
@@ -64,15 +64,20 @@ ipcMain.on('hide-window', () => {
   mainWindow.hide();
 });
 
-// Use macOS native open to launch files
+// Use macOS native shell to launch files
 ipcMain.on('open-file', (event, filePath) => {
-  exec(`open "${filePath}"`, (error) => {
+  shell.openPath(filePath).then((error) => {
     if (error) {
-      console.error(`Error opening file: ${error.message}`);
+      console.error(`Error opening file: ${error}`);
       return;
     }
     mainWindow.hide();
   });
+});
+
+// Reveal in Finder
+ipcMain.on('reveal-file', (event, filePath) => {
+  shell.showItemInFolder(filePath);
 });
 
 ipcMain.handle('select-folder', async () => {

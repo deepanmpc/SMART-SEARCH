@@ -107,7 +107,7 @@ function displayResults(results) {
                     <span><span class="res-icon-bg">${icon}</span> ${res.document_name}</span>
                     <span class="result-score">${score}%</span>
                 </div>
-                <div class="result-snippet ${res.content_type === 'image' ? 'has-thumb' : ''}">${snippet}</div>
+                ${res.content_type === 'image' ? `<div class="result-snippet has-thumb">${snippet}</div>` : ''}
             `;
             div.onclick = () => {
                 selectResult(i);
@@ -151,8 +151,10 @@ function selectResult(index) {
     }
     
     resultPreview.innerHTML = `
-        ${mediaHtml}
-        <div class="preview-title">${res.document_name}</div>
+        <div class="interactive-preview" onclick="ipcRenderer.send('open-file', '${res.file_path}')">
+            ${mediaHtml}
+            <div class="preview-title clickable-title">${res.document_name}</div>
+        </div>
         <div class="preview-meta">${(res.score * 100).toFixed(0)}% Match • ${res.file_type.toUpperCase()}</div>
         ${res.chunk_text ? `<div class="preview-snippet">${res.chunk_text}</div>` : ''}
     `;
@@ -416,8 +418,12 @@ searchInput.addEventListener('keydown', (e) => {
         if (currentResults.length > 0) selectResult(selectedIndex - 1);
     } else if (e.key === 'ArrowRight' && searchInput.value === '') {
         cycleFilter('next');
-    } else if (e.key === 'ArrowLeft' && searchInput.value === '') {
-        cycleFilter('prev');
+    } else if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const isResultsVisible = !resultsContainer.classList.contains('hidden');
+        if (isResultsVisible && currentResults.length > 0 && selectedIndex >= 0) {
+            ipcRenderer.send('reveal-file', currentResults[selectedIndex].file_path);
+        }
     }
 });
 

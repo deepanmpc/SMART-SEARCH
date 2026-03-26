@@ -28,10 +28,10 @@ def search(query: str, top_k: int = 5, index_path: str = DEFAULT_INDEX, db_path:
     for r in sql_hits:
         path = r["document_path"]
         # Bug 3: Lower score bonus so images can surface
-        r["score"] = 0.7  # Base bonus for filename match
+        r["score"] = 0.75  # Base bonus for filename match
         # Extra bonus for exact filename match
         if query_lower == r["document_name"].lower().split(".")[0]:
-            r["score"] = 1.5
+            r["score"] = 0.9
         best_results[path] = r
 
     # 2. Semantic FAISS Match
