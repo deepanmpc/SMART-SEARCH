@@ -53,6 +53,7 @@ PLAN_LIMITS = {
 # Global progress state
 INDEX_PROGRESS = {
     "is_indexing": False,
+    "is_paused": False,
     "current_file": "",
     "total_files": 0,
     "processed_files": 0,
@@ -60,6 +61,26 @@ INDEX_PROGRESS = {
     "percentage": 0.0,
     "eta_seconds": 0.0
 }
+STOP_INDEXING = False
+PAUSE_INDEXING = False
+
+@app.post("/index/stop")
+def stop_indexing():
+    global STOP_INDEXING, INDEX_PROGRESS
+    if INDEX_PROGRESS["is_indexing"]:
+        STOP_INDEXING = True
+        return {"success": True, "message": "Stopping indexing..."}
+    return {"success": False, "message": "No indexing in progress."}
+
+@app.post("/index/pause")
+def pause_indexing():
+    global PAUSE_INDEXING, INDEX_PROGRESS
+    if INDEX_PROGRESS["is_indexing"]:
+        PAUSE_INDEXING = not PAUSE_INDEXING
+        INDEX_PROGRESS["is_paused"] = PAUSE_INDEXING
+        state = "paused" if PAUSE_INDEXING else "resumed"
+        return {"success": True, "message": f"Indexing {state}."}
+    return {"success": False, "message": "No indexing in progress."}
 
 @app.get("/stats", response_model=StatsResponse)
 def get_stats():
@@ -200,23 +221,28 @@ def get_index_status():
     return IndexStatusResponse(**INDEX_PROGRESS)
 
 def run_indexing(paths: List[str]):
-    global INDEX_PROGRESS
+    global INDEX_PROGRESS, STOP_INDEXING, PAUSE_INDEXING
     import time as time_mod
+    STOP_INDEXING = False
+    PAUSE_INDEXING = False
     
     try:
         all_found = []
         for p in paths:
+            if STOP_INDEXING: break
             folder = os.path.expanduser(p)
             all_found.extend(_crawl(folder))
             
-        if not all_found:
+        if not all_found or STOP_INDEXING:
             INDEX_PROGRESS["is_indexing"] = False
+            STOP_INDEXING = False
             return
             
         INDEX_PROGRESS["total_files"] = len(all_found)
         INDEX_PROGRESS["processed_files"] = 0
         INDEX_PROGRESS["start_time"] = time_mod.time()
         INDEX_PROGRESS["is_indexing"] = True
+        INDEX_PROGRESS["is_paused"] = False
         
         conn = init_db(DB_PATH)
         faiss_idx = FaissIndex()
@@ -228,9 +254,19 @@ def run_indexing(paths: List[str]):
         from ingestion.media_parser import chunk_image, chunk_video
 
         for i, fm in enumerate(all_found):
+            # PAUSE LOGIC
+            while PAUSE_INDEXING and not STOP_INDEXING:
+                time_mod.sleep(0.5)
+            
+            # STOP LOGIC
+            if STOP_INDEXING: 
+                print("!!! Indexing stopped by user !!!")
+                break
+                
             INDEX_PROGRESS["current_file"] = fm["filename"]
             INDEX_PROGRESS["processed_files"] = i
-            
+            INDEX_PROGRESS["percentage"] = round((i / INDEX_PROGRESS["total_files"]) * 100, 1)
+
             # Check limit
             if (faiss_idx.total_vectors + total_chunks_added) >= limit:
                 break
@@ -260,6 +296,7 @@ def run_indexing(paths: List[str]):
 
                     batch_size = 16
                     for b_idx in range(0, len(media_chunks), batch_size):
+                        if STOP_INDEXING: break
                         batch = media_chunks[b_idx : b_idx + batch_size]
                         units = []
                         for c in batch:
@@ -282,6 +319,7 @@ def run_indexing(paths: List[str]):
                     print(f"Failed media {fm['path']}: {e}")
                     if "429" in str(e) or "quota" in str(e).lower():
                         print("!!! Quota exhausted. Stopping indexing. !!!")
+                        STOP_INDEXING = True
                         break
             else:
                 try:
@@ -292,6 +330,7 @@ def run_indexing(paths: List[str]):
 
                     batch_size = 50 
                     for b_idx in range(0, len(chunks), batch_size):
+                        if STOP_INDEXING: break
                         batch = chunks[b_idx : b_idx + batch_size]
                         units = [{"type": "text", "data": c} for c in batch]
                         vecs = embed_batch(units) or []
@@ -309,20 +348,22 @@ def run_indexing(paths: List[str]):
                     print(f"Failed text {fm['path']}: {e}")
                     if "429" in str(e) or "quota" in str(e).lower():
                         print("!!! Quota exhausted. Stopping indexing. !!!")
+                        STOP_INDEXING = True
                         break
 
-            # Yield CPU to the OS to prevent kernel_task CPU spikes
-            time_mod.sleep(0.01)
-
         faiss_idx.save(INDEX_PATH)
-        INDEX_PROGRESS["processed_files"] = INDEX_PROGRESS["total_files"]
-        INDEX_PROGRESS["percentage"] = 100.0
+        INDEX_PROGRESS["processed_files"] = i + 1 if STOP_INDEXING else INDEX_PROGRESS["total_files"]
+        INDEX_PROGRESS["percentage"] = 100.0 if not STOP_INDEXING else INDEX_PROGRESS["percentage"]
         INDEX_PROGRESS["eta_seconds"] = 0.0
         time_mod.sleep(2)
         INDEX_PROGRESS["is_indexing"] = False
+        STOP_INDEXING = False
+        PAUSE_INDEXING = False
     except Exception as e:
         print(f"Error in background indexing: {e}")
         INDEX_PROGRESS["is_indexing"] = False
+        STOP_INDEXING = False
+        PAUSE_INDEXING = False
 
 @app.post("/index", response_model=IndexResponse)
 def index_endpoint(req: IndexRequest, background_tasks: BackgroundTasks):

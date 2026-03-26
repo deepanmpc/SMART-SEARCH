@@ -35,8 +35,12 @@
     <div id="indexingOverlay" class="hidden">
       <!-- Re-using result layout style for indexing -->
       <div class="answer-box">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <span id="indexingFile" style="font-weight: 600;">Indexing...</span>
+          <div style="display: flex; gap: 8px;">
+            <button id="pauseIndexingBtn" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 6px; padding: 2px 8px; font-size: 10px; cursor: pointer;">Pause</button>
+            <button id="stopIndexingBtn" style="background: rgba(255, 59, 48, 0.2); border: 1px solid rgba(255, 59, 48, 0.4); color: #ff3b30; border-radius: 6px; padding: 2px 8px; font-size: 10px; cursor: pointer;">Stop</button>
+          </div>
           <span id="indexingETA" style="opacity: 0.6;">--</span>
         </div>
         <div class="progress-bar-container" style="width: 100%; margin: 10px 0;">

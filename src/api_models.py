@@ -43,6 +43,7 @@ class AskResponse(BaseModel):
 
 class IndexStatusResponse(BaseModel):
     is_indexing: bool
+    is_paused: bool = False
     current_file: str
     total_files: int
     processed_files: int

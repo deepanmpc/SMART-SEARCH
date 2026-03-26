@@ -18,6 +18,8 @@ const indexingETA = document.getElementById('indexingETA');
 const indexingProgressBar = document.getElementById('indexingProgressBar');
 const indexingCount = document.getElementById('indexingCount');
 const indexingPercent = document.getElementById('indexingPercent');
+const stopIndexingBtn = document.getElementById('stopIndexingBtn');
+const pauseIndexingBtn = document.getElementById('pauseIndexingBtn');
 
 const API_URL = 'http://localhost:8000';
 let debounceTimer;
@@ -218,7 +220,14 @@ function startPollingProgress() {
             }
 
             // Update UI
-            indexingFile.textContent = `Indexing: ${data.current_file || 'Preparing...'}`;
+            if (data.is_paused) {
+                indexingFile.textContent = `⏸️ Paused: ${data.current_file}`;
+                pauseIndexingBtn.textContent = 'Resume';
+            } else {
+                indexingFile.textContent = `Indexing: ${data.current_file || 'Preparing...'}`;
+                pauseIndexingBtn.textContent = 'Pause';
+            }
+            
             indexingProgressBar.style.width = `${data.percentage}%`;
             indexingCount.textContent = `${data.processed_files} / ${data.total_files}`;
             indexingPercent.textContent = `${data.percentage}%`;
@@ -353,6 +362,30 @@ indexFolderBtn.onclick = async () => {
 };
 
 clearIndexBtn.addEventListener('click', deleteIndex);
+
+stopIndexingBtn.onclick = async () => {
+    try {
+        const res = await fetch(`${API_URL}/index/stop`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            indexingFile.textContent = "🛑 Stopping...";
+        }
+    } catch (e) {
+        console.error("Stop error", e);
+    }
+};
+
+pauseIndexingBtn.onclick = async () => {
+    try {
+        const res = await fetch(`${API_URL}/index/pause`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            // State will be updated by polling
+        }
+    } catch (e) {
+        console.error("Pause error", e);
+    }
+};
 
 filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
