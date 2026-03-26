@@ -6,7 +6,6 @@ const clearIndexBtn = document.getElementById('clearIndexBtn');
 const resultsContainer = document.getElementById('resultsContainer');
 const resultsList = document.getElementById('resultsList');
 const resultPreview = document.getElementById('resultPreview');
-const loadingIndicator = document.getElementById('loadingIndicator');
 const planText = document.getElementById('planText');
 const progressBar = document.getElementById('progressBar');
 const usageText = document.getElementById('usageText');
@@ -99,12 +98,10 @@ function displayResults(results) {
             const score = (res.score * 100).toFixed(0);
             
             let snippet = res.chunk_text || '';
-            if (res.content_type === 'image') {
-                snippet = `<img src="file://${res.file_path}" class="result-thumb" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22><rect width=%2224%22 height=%2224%22 fill=%22%23333%22/><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2210%22>🖼️</text></svg>'">`;
-            } else if (!snippet && res.file_type) {
-                if (res.file_type === 'image') snippet = '🖼️ Image file — press Enter to preview';
-                else if (res.file_type === 'video') snippet = '🎬 Video file — press Enter to preview';
-                else if (res.file_type === 'audio') snippet = '🎵 Audio file — press Enter to preview';
+            if (!snippet && res.file_type) {
+                if (res.file_type === 'image') snippet = '🖼️ Image file — View preview on right';
+                else if (res.file_type === 'video') snippet = '🎬 Video file — View preview on right';
+                else if (res.file_type === 'audio') snippet = '🎵 Audio file — View preview on right';
             }
             
             div.innerHTML = `
@@ -115,6 +112,7 @@ function displayResults(results) {
                     </div>
                     <span class="result-score">${score}%</span>
                 </div>
+                ${snippet ? `<div class="result-snippet">${snippet}</div>` : ''}
             `;
             div.onclick = () => {
                 selectResult(i);
