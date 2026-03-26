@@ -82,12 +82,12 @@ ipcMain.on('reveal-file', (event, filePath) => {
 
 ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory']
+    properties: ['openDirectory', 'openFile', 'multiSelections']
   });
   if (result.canceled) {
     return null;
   } else {
-    return result.filePaths[0];
+    return result.filePaths;
   }
 });
 

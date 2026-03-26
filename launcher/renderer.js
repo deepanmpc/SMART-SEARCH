@@ -53,15 +53,13 @@ fetchStats();
 
 // Window management
 function updateWindowSize() {
-    const isIndexing = !indexingOverlay.classList.contains('hidden');
-    const hasResults = !resultsContainer.classList.contains('hidden');
-    
-    let height = 180; 
-    if (isIndexing && hasResults) height = 520;
-    else if (isIndexing) height = 280;
-    else if (hasResults) height = 460;
-    
-    ipcRenderer.send('resize-window', 720, height);
+    setTimeout(() => {
+        const width = 900;
+        const container = document.querySelector('.launcher-container');
+        // Increase padding to ensure all floating shadows are visible
+        const height = container.scrollHeight + 60; 
+        ipcRenderer.send('resize-window', width, height);
+    }, 100);
 }
 
 function showLoading() {
