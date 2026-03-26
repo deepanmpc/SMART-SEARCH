@@ -18,7 +18,7 @@ class SearchResponse(BaseModel):
     results: List[SearchResult]
 
 class IndexRequest(BaseModel):
-    folder_path: str
+    paths: List[str]
 
 class IndexResponse(BaseModel):
     success: bool

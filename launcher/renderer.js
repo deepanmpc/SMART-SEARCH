@@ -53,15 +53,13 @@ fetchStats();
 
 // Window management
 function updateWindowSize() {
-    const isIndexing = !indexingOverlay.classList.contains('hidden');
-    const hasResults = !resultsContainer.classList.contains('hidden');
-    
-    let height = 180; 
-    if (isIndexing && hasResults) height = 520;
-    else if (isIndexing) height = 280;
-    else if (hasResults) height = 460;
-    
-    ipcRenderer.send('resize-window', 720, height);
+    setTimeout(() => {
+        const width = 900;
+        const container = document.querySelector('.launcher-container');
+        // Increase padding to ensure all floating shadows are visible
+        const height = container.scrollHeight + 60; 
+        ipcRenderer.send('resize-window', width, height);
+    }, 100);
 }
 
 function showLoading() {
@@ -107,7 +105,7 @@ function displayResults(results) {
                     <span><span class="res-icon-bg">${icon}</span> ${res.document_name}</span>
                     <span class="result-score">${score}%</span>
                 </div>
-                <div class="result-snippet ${res.content_type === 'image' ? 'has-thumb' : ''}">${snippet}</div>
+                ${res.content_type === 'image' ? `<div class="result-snippet has-thumb">${snippet}</div>` : ''}
             `;
             div.onclick = () => {
                 selectResult(i);
@@ -151,8 +149,10 @@ function selectResult(index) {
     }
     
     resultPreview.innerHTML = `
-        ${mediaHtml}
-        <div class="preview-title">${res.document_name}</div>
+        <div class="interactive-preview" onclick="ipcRenderer.send('open-file', '${res.file_path}')">
+            ${mediaHtml}
+            <div class="preview-title clickable-title">${res.document_name}</div>
+        </div>
         <div class="preview-meta">${(res.score * 100).toFixed(0)}% Match • ${res.file_type.toUpperCase()}</div>
         ${res.chunk_text ? `<div class="preview-snippet">${res.chunk_text}</div>` : ''}
     `;
@@ -298,12 +298,12 @@ async function handleCommand(val) {
     }
 }
 
-async function startIndexing(folderPath) {
+async function startIndexing(paths) {
     try {
         const res = await fetch(`${API_URL}/index`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ folder_path: folderPath })
+            body: JSON.stringify({ paths: paths })
         });
         const data = await res.json();
         if (res.ok && data.success) {
@@ -338,12 +338,12 @@ async function deleteIndex() {
 }
 
 // Event Listeners
-indexFolderBtn.addEventListener('click', async () => {
-    const folder = await ipcRenderer.invoke('select-folder');
-    if (folder) {
-        startIndexing(folder);
+indexFolderBtn.onclick = async () => {
+    const paths = await ipcRenderer.invoke('select-folder');
+    if (paths && paths.length > 0) {
+        startIndexing(paths);
     }
-});
+};
 
 clearIndexBtn.addEventListener('click', deleteIndex);
 
@@ -416,8 +416,12 @@ searchInput.addEventListener('keydown', (e) => {
         if (currentResults.length > 0) selectResult(selectedIndex - 1);
     } else if (e.key === 'ArrowRight' && searchInput.value === '') {
         cycleFilter('next');
-    } else if (e.key === 'ArrowLeft' && searchInput.value === '') {
-        cycleFilter('prev');
+    } else if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const isResultsVisible = !resultsContainer.classList.contains('hidden');
+        if (isResultsVisible && currentResults.length > 0 && selectedIndex >= 0) {
+            ipcRenderer.send('reveal-file', currentResults[selectedIndex].file_path);
+        }
     }
 });
 

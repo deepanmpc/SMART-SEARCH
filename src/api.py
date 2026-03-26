@@ -199,13 +199,16 @@ def get_index_status():
         
     return IndexStatusResponse(**INDEX_PROGRESS)
 
-def run_indexing(folder_path: str):
+def run_indexing(paths: List[str]):
     global INDEX_PROGRESS
     import time as time_mod
     
     try:
-        folder = os.path.expanduser(folder_path)
-        all_found = _crawl(folder)
+        all_found = []
+        for p in paths:
+            folder = os.path.expanduser(p)
+            all_found.extend(_crawl(folder))
+            
         if not all_found:
             INDEX_PROGRESS["is_indexing"] = False
             return
@@ -327,12 +330,13 @@ def index_endpoint(req: IndexRequest, background_tasks: BackgroundTasks):
     if INDEX_PROGRESS["is_indexing"]:
         return IndexResponse(success=False, message="Indexing already in progress", files_indexed=0, chunks_indexed=0)
     
-    # Pre-check folder
-    folder = os.path.expanduser(req.folder_path)
-    if not Path(folder).exists():
-        raise HTTPException(status_code=404, detail=f"Path not found: {folder}")
+    # Pre-check paths
+    for p in req.paths:
+        path = os.path.expanduser(p)
+        if not Path(path).exists():
+            raise HTTPException(status_code=404, detail=f"Path not found: {path}")
 
-    background_tasks.add_task(run_indexing, req.folder_path)
+    background_tasks.add_task(run_indexing, req.paths)
     return IndexResponse(success=True, message="Indexing started in background", files_indexed=0, chunks_indexed=0)
 
 @app.delete("/index", response_model=IndexResponse)
