@@ -7,54 +7,58 @@
 </head>
 <body>
   <div class="launcher-container">
+    <!-- Spotlight Search Bar -->
     <div class="top-row">
-      <div class="search-bar pill">
-        <div class="search-icon-container">
-          <span class="search-icon" id="searchIcon">🔍</span>
-        </div>
-        <input type="text" id="searchInput" placeholder="Applications" autofocus autocomplete="off" spellcheck="false">
-        <div id="loadingIndicator" class="hidden">...</div>
+      <div class="search-bar">
+        <span class="search-icon" id="searchIcon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search files or ask AI..." autofocus autocomplete="off" spellcheck="false">
       </div>
       <div class="filter-dock">
-          <div class="filter-chip active" data-type="all" title="All Files">🔍</div>
-          <div class="filter-chip" data-type="text" title="Documents">📄</div>
-          <div class="filter-chip" data-type="image" title="Images">🖼️</div>
-          <div class="filter-chip" data-type="video" title="Videos">🎬</div>
-          <div class="filter-chip" data-type="audio" title="Audio">🎵</div>
+          <div class="filter-chip active" data-type="all" title="All Files">✦</div>
+          <div class="filter-chip" data-type="text" title="Documents">≣</div>
+          <div class="filter-chip" data-type="image" title="Images">▣</div>
+          <div class="filter-chip" data-type="video" title="Videos">🎞️</div>
+          <div class="filter-chip" data-type="audio" title="Audio">≋</div>
       </div>
       <button id="indexFolderBtn" title="Index a folder">📁</button>
     </div>
     
-    <div id="indexingOverlay" class="hidden">
-      <div class="indexing-header">
-        <span id="indexingFile">Indexing...</span>
-        <span id="indexingETA">ETA: --</span>
-      </div>
-      <div class="progress-bar-container large">
-        <div class="progress-bar" id="indexingProgressBar" style="width: 0%"></div>
-      </div>
-      <div class="indexing-footer">
-        <span id="indexingCount">0 / 0</span>
-        <span id="indexingPercent">0%</span>
-      </div>
-    </div>
-
+    <!-- Results / Answer Area -->
     <div id="resultsContainer" class="hidden">
       <div id="resultsList"></div>
       <div id="resultPreview">
         <!-- Preview rendered here -->
       </div>
     </div>
+
+    <!-- Indexing Progress -->
+    <div id="indexingOverlay" class="hidden">
+      <!-- Re-using result layout style for indexing -->
+      <div class="answer-box">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span id="indexingFile" style="font-weight: 600;">Indexing...</span>
+          <span id="indexingETA" style="opacity: 0.6;">--</span>
+        </div>
+        <div class="progress-bar-container" style="width: 100%; margin: 10px 0;">
+          <div class="progress-bar" id="indexingProgressBar" style="width: 0%"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: 0.7;">
+          <span id="indexingCount">0 / 0</span>
+          <span id="indexingPercent">0%</span>
+        </div>
+      </div>
+    </div>
     
+    <!-- Status Footer Pill -->
     <div class="footer">
-      <div class="limit-indicator">
-        <span id="planText">Memory Usage</span>
+      <div style="display: flex; align-items: center;">
+        <span id="planText" style="font-weight: 500;">Memory Usage</span>
         <div class="progress-bar-container">
           <div class="progress-bar" id="progressBar" style="width: 0%"></div>
         </div>
         <span id="usageText">0%</span>
       </div>
-      <button id="clearIndexBtn" title="Clear All Data">🗑️ Clear All</button>
+      <button id="clearIndexBtn">🗑️ Clear All</button>
     </div>
   </div>
   <script src="renderer.js"></script>
