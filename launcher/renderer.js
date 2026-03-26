@@ -298,12 +298,12 @@ async function handleCommand(val) {
     }
 }
 
-async function startIndexing(folderPath) {
+async function startIndexing(paths) {
     try {
         const res = await fetch(`${API_URL}/index`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ folder_path: folderPath })
+            body: JSON.stringify({ paths: paths })
         });
         const data = await res.json();
         if (res.ok && data.success) {
@@ -338,12 +338,12 @@ async function deleteIndex() {
 }
 
 // Event Listeners
-indexFolderBtn.addEventListener('click', async () => {
-    const folder = await ipcRenderer.invoke('select-folder');
-    if (folder) {
-        startIndexing(folder);
+indexFolderBtn.onclick = async () => {
+    const paths = await ipcRenderer.invoke('select-folder');
+    if (paths && paths.length > 0) {
+        startIndexing(paths);
     }
-});
+};
 
 clearIndexBtn.addEventListener('click', deleteIndex);
 
