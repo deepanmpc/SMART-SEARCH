@@ -33,6 +33,10 @@ function createWindow() {
     // Keep it hidden initially, wait for shortcut
     console.log('Window preloaded and ready.');
   });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(() => {
@@ -40,6 +44,15 @@ app.whenReady().then(() => {
 
   // Register command to toggle window
   const ret = globalShortcut.register('CommandOrControl+Shift+Space', () => {
+    if (!mainWindow) {
+      createWindow();
+      setTimeout(() => {
+        mainWindow.show();
+        mainWindow.focus();
+      }, 200);
+      return;
+    }
+
     if (mainWindow.isVisible()) {
       mainWindow.hide();
     } else {

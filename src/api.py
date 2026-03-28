@@ -331,7 +331,7 @@ def run_indexing(paths: List[str]):
                                     faiss_idx = FaissIndex(dimension=len(vec))
                                 vector_ids = faiss_idx.add([vec])
                                 file_id = make_file_id(fm["path"], idx)
-                                desc = f"[{fm['type'].capitalize()}: {c.get('suffix', 'chunk')}]"
+                                desc = f"[{fm['type'].capitalize()} Content]"
                                 insert_chunk(conn, vector_ids[0], file_id, fm, idx, desc)
                                 indexed += 1
                                 total_chunks_added += 1

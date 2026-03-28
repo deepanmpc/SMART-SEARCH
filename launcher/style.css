@@ -257,56 +257,73 @@ body {
 
 #resultPreview {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 20px 24px;
+    background: rgba(0, 0, 0, 0.25); /* DARKER GLASS */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 24px 32px;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 24px;
+    gap: 32px;
     text-align: left;
+    transition: all 0.3s ease;
 }
 
 .preview-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     min-width: 0;
 }
 
 .preview-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--text-primary);
+    color: #fff;
+    letter-spacing: -0.5px;
 }
 
 .preview-meta {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--accent);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
     margin-bottom: 4px;
+    opacity: 0.9;
 }
 
 .preview-snippet {
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.04);
-    padding: 10px 14px;
-    border-radius: 8px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px 16px;
+    border-radius: 10px;
     text-align: left;
     width: 100%;
-    max-height: 80px;
+    max-height: 100px;
     overflow-y: auto;
     word-break: break-word;
-    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.preview-media-img, .preview-media-video {
+    max-width: 180px;
+    max-height: 120px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.preview-media-img:hover {
+    transform: scale(1.05) translateY(-4px);
 }
 
 .preview-snippet::-webkit-scrollbar {

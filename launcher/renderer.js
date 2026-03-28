@@ -128,17 +128,31 @@ function getSemanticScore(score) {
 }
 
 function cleanFileName(name) {
-    // Remove common timestamp patterns like "Screenshot 2026-02-06 at 3.43PM" -> "Screenshot -- Feb 6"
-    // Also remove file extensions for display
-    let cleaned = name.replace(/\.[^/.]+$/, ""); // Remove extension
+    // Remove extension
+    let cleaned = name.replace(/\.[^/.]+$/, ""); 
     
-    // Check for macOS screenshot pattern: Screenshot 2026-02-06 at 3.43.08 PM
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // 1. macOS screenshot pattern: Screenshot 2026-02-06 at 3.43.08 PM
     const screenshotMatch = cleaned.match(/Screenshot (\d{4})-(\d{2})-(\d{2}) at (.*)/);
     if (screenshotMatch) {
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const month = months[parseInt(screenshotMatch[2]) - 1];
         const day = parseInt(screenshotMatch[3]);
         return `Screenshot -- ${month} ${day}`;
+    }
+
+    // 2. Photo on pattern: Photo on 08-05-24 at 10.51 PM
+    const photoMatch = cleaned.match(/Photo on (\d{2})-(\d{2})-(\d{2}) at (.*)/);
+    if (photoMatch) {
+        // Assuming DD-MM-YY or MM-DD-YY. Let's try to be smart or just simplify to "Photo -- Month Day"
+        // Based on the user's screenshot "08-05-24", likely May 8 or Aug 5.
+        const monthIndex = parseInt(photoMatch[1]) - 1;
+        if (monthIndex >= 0 && monthIndex < 12) {
+            const month = months[monthIndex];
+            const day = parseInt(photoMatch[2]);
+            return `Photo -- ${month} ${day}`;
+        }
+        return `Photo -- ${photoMatch[1]}-${photoMatch[2]}`;
     }
     
     return cleaned;
@@ -162,10 +176,15 @@ function displayResults(results) {
             const displayName = cleanFileName(res.document_name);
             
             let snippet = res.chunk_text || '';
+            // REMOVE DEVELOPER METADATA: Filter out [Image: tile...] or [Video: ...]
+            if (snippet.startsWith('[') && snippet.includes(': ')) {
+                snippet = '';
+            }
+
             if (!snippet && res.file_type) {
-                if (res.file_type === 'image') snippet = '🖼️ Image file — View preview on right';
-                else if (res.file_type === 'video') snippet = '🎬 Video file — View preview on right';
-                else if (res.file_type === 'audio') snippet = '🎵 Audio file — View preview on right';
+                if (res.file_type === 'image') snippet = '🖼️ Image file — View preview';
+                else if (res.file_type === 'video') snippet = '🎬 Video file — View preview';
+                else if (res.file_type === 'audio') snippet = '🎵 Audio file — View preview';
             }
             
             const isTopResult = i === 0;
@@ -216,13 +235,18 @@ function selectResult(index) {
     const semanticScore = getSemanticScore(res.score);
     const displayName = cleanFileName(res.document_name);
     
+    let snippet = res.chunk_text || '';
+    if (snippet.startsWith('[') && (snippet.includes(': ') || snippet.includes(' Content]'))) {
+        snippet = '';
+    }
+
     let mediaHtml = `<div class="preview-icon-large">${icon}</div>`;
     if (res.file_type === 'image') {
-        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" loading="lazy" style="max-width: 180px; max-height: 120px;" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
+        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" loading="lazy" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
     } else if (res.file_type === 'video') {
-        mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" style="max-width: 180px; max-height: 120px;" controls autoplay muted loop></video>`;
+        mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" controls autoplay muted loop></video>`;
     } else if (res.file_type === 'audio') {
-        mediaHtml = `<audio src="file://${res.file_path}" controls autoplay style="width: 180px;"></audio>`;
+        mediaHtml = `<audio src="file://${res.file_path}" controls autoplay style="width: 180px; border-radius: 20px;"></audio>`;
     }
     
     resultPreview.innerHTML = `
@@ -232,7 +256,7 @@ function selectResult(index) {
         <div class="preview-content">
             <div class="preview-meta">${semanticScore} • ${friendlyType}</div>
             <div class="preview-title clickable-title" onclick="ipcRenderer.send('open-file', '${res.file_path}')">${displayName}</div>
-            ${res.chunk_text ? `<div class="preview-snippet">${res.chunk_text}</div>` : ''}
+            ${snippet ? `<div class="preview-snippet">${snippet}</div>` : ''}
         </div>
     `;
 }
@@ -485,32 +509,15 @@ function cycleFilter(direction) {
     setActiveFilter(types[currentIndex]);
 }
 
-function showSuggestions() {
-    currentResults = [];
-    resultsList.innerHTML = `
-        <div class="info-box" style="padding: 24px; text-align: center;">
-            <div style="font-weight: 600; font-size: 14px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;">✦ QUICK FILTERS</div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('text')">≣ Documents</div>
-                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('image')">▣ Images</div>
-                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('video')">🎞️ Videos</div>
-                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('audio')">≋ Audio</div>
-            </div>
-            <div style="margin-top: 24px; font-size: 12px; color: var(--text-secondary); opacity: 0.6;">
-                Try searching for "project notes", "vacation photos", or "meeting recording"
-            </div>
-        </div>
-    `;
-    resultPreview.innerHTML = '';
-    resultsContainer.classList.remove('hidden');
-    updateWindowSize();
-}
-
 searchInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
     const val = e.target.value.trim();
     if (!val) {
-        showSuggestions();
+        currentResults = [];
+        resultsList.innerHTML = '';
+        resultPreview.innerHTML = '';
+        resultsContainer.classList.add('hidden');
+        updateWindowSize();
         return;
     }
     if (val.startsWith('index ') || val.startsWith('ask ') || val === 'status') return;
@@ -521,9 +528,7 @@ searchInput.addEventListener('input', (e) => {
 });
 
 searchInput.addEventListener('focus', () => {
-    if (!searchInput.value.trim()) {
-        showSuggestions();
-    }
+    // Just focus, no suggestions
 });
 
 // Drag and Drop support
