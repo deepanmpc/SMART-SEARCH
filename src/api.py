@@ -1,6 +1,7 @@
 import os
 import mimetypes
 import time
+import psutil
 from pathlib import Path
 from collections import Counter
 from fastapi import FastAPI, HTTPException, BackgroundTasks
@@ -40,6 +41,13 @@ async def genai_exception_handler(request, exc: ClientError):
     return JSONResponse(
         status_code=500,
         content={"detail": f"Gemini API Error: {exc}"}
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred. Please try again later or check your backend logs."}
     )
 
 # Mock subscription
@@ -86,11 +94,23 @@ def pause_indexing():
 def get_stats():
     total_vectors = _vector_count()
     limit = PLAN_LIMITS.get(CURRENT_PLAN, 50000)
+    
+    # Get RAM usage of current process
+    try:
+        process = psutil.Process(os.getpid())
+        ram_usage = process.memory_info().rss / (1024 * 1024)  # MB
+    except Exception:
+        ram_usage = 0.0
+        
+    ram_limit = 500.0  # From PRODUCT_FIXES.md target
+    
     return StatsResponse(
         total_chunks=total_vectors,
         plan=CURRENT_PLAN,
         plan_limit=limit,
-        usage_percent=round((total_vectors / limit) * 100, 2)
+        usage_percent=round((total_vectors / limit) * 100, 2),
+        ram_usage_mb=round(ram_usage, 2),
+        ram_limit_mb=ram_limit
     )
 
 @app.post("/search", response_model=SearchResponse)

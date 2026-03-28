@@ -20,6 +20,8 @@ const indexingCount = document.getElementById('indexingCount');
 const indexingPercent = document.getElementById('indexingPercent');
 const stopIndexingBtn = document.getElementById('stopIndexingBtn');
 const pauseIndexingBtn = document.getElementById('pauseIndexingBtn');
+const setupWizard = document.getElementById('setupWizard');
+const setupStartBtn = document.getElementById('setupStartBtn');
 
 const API_URL = 'http://localhost:8000';
 let debounceTimer;
@@ -42,15 +44,41 @@ async function fetchStats() {
         const res = await fetch(`${API_URL}/stats`);
         const data = await res.json();
         planText.textContent = `Memory Usage`;
-        progressBar.style.width = `${Math.min(data.usage_percent, 100)}%`;
-        if (data.usage_percent > 90) progressBar.style.background = 'linear-gradient(90deg, #ff416c, #ff4b2b)';
-        usageText.textContent = `${data.usage_percent}%`;
+        
+        const usageMb = data.ram_usage_mb || 0;
+        const limitMb = data.ram_limit_mb || 500;
+        const percent = Math.min((usageMb / limitMb) * 100, 100);
+        
+        progressBar.style.width = `${percent}%`;
+        if (percent > 90) progressBar.style.background = 'linear-gradient(90deg, #ff416c, #ff4b2b)';
+        usageText.textContent = `${Math.round(usageMb)} MB / ${limitMb} MB`;
     } catch (e) {
         console.error('Failed to fetch stats', e);
     }
 }
 
 fetchStats();
+
+// Check for first-time setup
+if (!localStorage.getItem('smart-search-setup-done')) {
+    setTimeout(() => {
+        if (setupWizard) {
+            setupWizard.classList.remove('hidden');
+            updateWindowSize();
+        }
+    }, 100);
+}
+
+if (setupStartBtn) {
+    setupStartBtn.onclick = async () => {
+        const paths = await ipcRenderer.invoke('select-folder');
+        if (paths && paths.length > 0) {
+            startIndexing(paths);
+            localStorage.setItem('smart-search-setup-done', 'true');
+            if (setupWizard) setupWizard.classList.add('hidden');
+        }
+    };
+}
 
 // Window management
 function updateWindowSize() {
@@ -83,6 +111,42 @@ function getFileIcon(fileType) {
     return icons[fileType] || '📄';
 }
 
+function getUserFriendlyFileType(fileType) {
+    const map = {
+        'image': 'Image',
+        'video': 'Video',
+        'audio': 'Audio',
+        'pdf': 'PDF Document',
+        'docx': 'Word Document',
+        'text': 'Text Document',
+        'pptx': 'PowerPoint'
+    };
+    return map[fileType] || fileType.toUpperCase();
+}
+
+function getSemanticScore(score) {
+    if (score >= 0.8) return 'Best Match';
+    if (score >= 0.5) return 'Strong Match';
+    return 'Possible Match';
+}
+
+function cleanFileName(name) {
+    // Remove common timestamp patterns like "Screenshot 2026-02-06 at 3.43PM" -> "Screenshot -- Feb 6"
+    // Also remove file extensions for display
+    let cleaned = name.replace(/\.[^/.]+$/, ""); // Remove extension
+    
+    // Check for macOS screenshot pattern: Screenshot 2026-02-06 at 3.43.08 PM
+    const screenshotMatch = cleaned.match(/Screenshot (\d{4})-(\d{2})-(\d{2}) at (.*)/);
+    if (screenshotMatch) {
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const month = months[parseInt(screenshotMatch[2]) - 1];
+        const day = parseInt(screenshotMatch[3]);
+        return `Screenshot -- ${month} ${day}`;
+    }
+    
+    return cleaned;
+}
+
 function displayResults(results) {
     currentResults = results;
     resultsList.innerHTML = '';
@@ -97,7 +161,8 @@ function displayResults(results) {
             div.className = 'result-item';
             div.id = `result-item-${i}`;
             const icon = getFileIcon(res.file_type);
-            const score = (res.score * 100).toFixed(0);
+            const semanticScore = getSemanticScore(res.score);
+            const displayName = cleanFileName(res.document_name);
             
             let snippet = res.chunk_text || '';
             if (!snippet && res.file_type) {
@@ -110,9 +175,9 @@ function displayResults(results) {
                 <div class="result-title">
                     <div class="result-name-wrapper">
                         <span class="res-icon-bg">${icon}</span>
-                        <span class="result-name-text">${res.document_name}</span>
+                        <span class="result-name-text">${displayName}</span>
                     </div>
-                    <span class="result-score">${score}%</span>
+                    <span class="result-score">${semanticScore}</span>
                 </div>
                 ${snippet ? `<div class="result-snippet">${snippet}</div>` : ''}
             `;
@@ -147,23 +212,28 @@ function selectResult(index) {
     
     const res = currentResults[index];
     const icon = getFileIcon(res.file_type);
+    const friendlyType = getUserFriendlyFileType(res.file_type);
+    const semanticScore = getSemanticScore(res.score);
+    const displayName = cleanFileName(res.document_name);
     
     let mediaHtml = `<div class="preview-icon-large">${icon}</div>`;
     if (res.file_type === 'image') {
-        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
+        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" style="max-width: 180px; max-height: 120px;" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
     } else if (res.file_type === 'video') {
-        mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" controls autoplay muted loop></video>`;
+        mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" style="max-width: 180px; max-height: 120px;" controls autoplay muted loop></video>`;
     } else if (res.file_type === 'audio') {
-        mediaHtml = `<audio src="file://${res.file_path}" controls autoplay style="margin-bottom: 20px;"></audio>`;
+        mediaHtml = `<audio src="file://${res.file_path}" controls autoplay style="width: 180px;"></audio>`;
     }
     
     resultPreview.innerHTML = `
-        <div class="interactive-preview" onclick="ipcRenderer.send('open-file', '${res.file_path}')">
+        <div class="interactive-preview" style="width: auto;" onclick="ipcRenderer.send('open-file', '${res.file_path}')">
             ${mediaHtml}
-            <div class="preview-title clickable-title">${res.document_name}</div>
         </div>
-        <div class="preview-meta">${(res.score * 100).toFixed(0)}% Match • ${res.file_type.toUpperCase()}</div>
-        ${res.chunk_text ? `<div class="preview-snippet">${res.chunk_text}</div>` : ''}
+        <div class="preview-content">
+            <div class="preview-meta">${semanticScore} • ${friendlyType}</div>
+            <div class="preview-title clickable-title" onclick="ipcRenderer.send('open-file', '${res.file_path}')">${displayName}</div>
+            ${res.chunk_text ? `<div class="preview-snippet">${res.chunk_text}</div>` : ''}
+        </div>
     `;
 }
 
@@ -415,15 +485,32 @@ function cycleFilter(direction) {
     setActiveFilter(types[currentIndex]);
 }
 
+function showSuggestions() {
+    currentResults = [];
+    resultsList.innerHTML = `
+        <div class="info-box" style="padding: 24px; text-align: center;">
+            <div style="font-weight: 600; font-size: 14px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;">✦ QUICK FILTERS</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('text')">≣ Documents</div>
+                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('image')">▣ Images</div>
+                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('video')">🎞️ Videos</div>
+                <div class="filter-chip active" style="border-radius: 8px; width: auto; padding: 0 14px; height: 32px; font-size: 13px;" onclick="setActiveFilter('audio')">≋ Audio</div>
+            </div>
+            <div style="margin-top: 24px; font-size: 12px; color: var(--text-secondary); opacity: 0.6;">
+                Try searching for "project notes", "vacation photos", or "meeting recording"
+            </div>
+        </div>
+    `;
+    resultPreview.innerHTML = '';
+    resultsContainer.classList.remove('hidden');
+    updateWindowSize();
+}
+
 searchInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
     const val = e.target.value.trim();
     if (!val) {
-        currentResults = [];
-        resultsList.innerHTML = '';
-        resultPreview.innerHTML = '';
-        resultsContainer.classList.add('hidden');
-        updateWindowSize();
+        showSuggestions();
         return;
     }
     if (val.startsWith('index ') || val.startsWith('ask ') || val === 'status') return;
@@ -431,6 +518,37 @@ searchInput.addEventListener('input', (e) => {
     debounceTimer = setTimeout(() => {
         handleCommand(val);
     }, 400);
+});
+
+searchInput.addEventListener('focus', () => {
+    if (!searchInput.value.trim()) {
+        showSuggestions();
+    }
+});
+
+// Drag and Drop support
+document.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.body.style.background = 'rgba(0, 122, 255, 0.05)';
+});
+
+document.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.body.style.background = 'transparent';
+});
+
+document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.body.style.background = 'transparent';
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+        const paths = files.map(f => f.path);
+        startIndexing(paths);
+    }
 });
 
 searchInput.addEventListener('keydown', (e) => {
@@ -442,6 +560,13 @@ searchInput.addEventListener('keydown', (e) => {
             ipcRenderer.send('open-file', currentResults[selectedIndex].file_path);
         } else {
             handleCommand(val);
+        }
+    } else if (e.key === ' ') {
+        // Space to open file if a result is selected and search input is not focused or is empty
+        const isResultsVisible = !resultsContainer.classList.contains('hidden');
+        if (isResultsVisible && currentResults.length > 0 && selectedIndex >= 0 && (document.activeElement !== searchInput || searchInput.value === '')) {
+            e.preventDefault();
+            ipcRenderer.send('open-file', currentResults[selectedIndex].file_path);
         }
     } else if (e.key === 'Escape') {
         ipcRenderer.send('hide-window');

@@ -7,6 +7,16 @@
 </head>
 <body>
   <div class="launcher-container">
+    <!-- Setup Wizard -->
+    <div id="setupWizard" class="hidden">
+      <div class="answer-box" style="padding: 32px; text-align: center;">
+        <h2 style="margin-bottom: 12px; color: #007aff;">✨ Welcome to Smart Search</h2>
+        <p style="margin-bottom: 24px; opacity: 0.8; line-height: 1.5;">Let's get you set up. Choose a folder to index so you can start searching with AI magic.</p>
+        <button id="setupStartBtn" style="background: #007aff; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;">Choose Folder & Begin</button>
+        <div style="margin-top: 16px; font-size: 11px; opacity: 0.5;">Your files never leave this machine. Securely indexed by Gemini local embedder.</div>
+      </div>
+    </div>
+
     <!-- Spotlight Search Bar -->
     <div class="top-row">
       <div class="search-bar">

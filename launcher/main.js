@@ -19,6 +19,8 @@ function createWindow() {
     resizable: true,
     vibrancy: 'under-window',
     visualEffectState: 'active',
+    show: false, // Start hidden
+    skipTaskbar: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -26,7 +28,11 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
-  // mainWindow.center(); // Ensure it starts in the middle
+  
+  mainWindow.once('ready-to-show', () => {
+    // Keep it hidden initially, wait for shortcut
+    console.log('Window preloaded and ready.');
+  });
 }
 
 app.whenReady().then(() => {

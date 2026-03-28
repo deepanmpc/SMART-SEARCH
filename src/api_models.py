@@ -31,6 +31,8 @@ class StatsResponse(BaseModel):
     plan: str
     plan_limit: int
     usage_percent: float
+    ram_usage_mb: float
+    ram_limit_mb: float
 
 class AskRequest(BaseModel):
     question: str

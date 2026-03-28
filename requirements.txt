@@ -8,3 +8,4 @@ python-pptx
 fastapi
 uvicorn
 pydantic
+psutil
