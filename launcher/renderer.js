@@ -52,6 +52,14 @@ async function fetchStats() {
         progressBar.style.width = `${percent}%`;
         if (percent > 90) progressBar.style.background = 'linear-gradient(90deg, #ff416c, #ff4b2b)';
         usageText.textContent = `${Math.round(usageMb)} MB / ${limitMb} MB`;
+
+        // Show Setup Wizard only if index is empty
+        if (data.total_chunks === 0) {
+            setupWizard.classList.remove('hidden');
+        } else {
+            setupWizard.classList.add('hidden');
+        }
+        updateWindowSize();
     } catch (e) {
         console.error('Failed to fetch stats', e);
     }
@@ -59,22 +67,11 @@ async function fetchStats() {
 
 fetchStats();
 
-// Check for first-time setup
-if (!localStorage.getItem('smart-search-setup-done')) {
-    setTimeout(() => {
-        if (setupWizard) {
-            setupWizard.classList.remove('hidden');
-            updateWindowSize();
-        }
-    }, 100);
-}
-
 if (setupStartBtn) {
     setupStartBtn.onclick = async () => {
         const paths = await ipcRenderer.invoke('select-folder');
         if (paths && paths.length > 0) {
             startIndexing(paths);
-            localStorage.setItem('smart-search-setup-done', 'true');
             if (setupWizard) setupWizard.classList.add('hidden');
         }
     };
@@ -153,7 +150,7 @@ function displayResults(results) {
     resultPreview.innerHTML = '';
     
     if (results.length === 0) {
-        resultsList.innerHTML = '<div class="info-box">No results found.</div>';
+        resultsList.innerHTML = '<div class="info-box" style="padding: 24px; text-align: center; color: var(--text-secondary);">No results found.</div>';
         selectedIndex = -1;
     } else {
         results.forEach((res, i) => {
@@ -171,11 +168,14 @@ function displayResults(results) {
                 else if (res.file_type === 'audio') snippet = '🎵 Audio file — View preview on right';
             }
             
+            const isTopResult = i === 0;
+            const topResultBadge = isTopResult ? `<span style="background: var(--accent); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-right: 8px; vertical-align: middle;">TOP RESULT</span>` : '';
+
             div.innerHTML = `
                 <div class="result-title">
                     <div class="result-name-wrapper">
                         <span class="res-icon-bg">${icon}</span>
-                        <span class="result-name-text">${displayName}</span>
+                        <span class="result-name-text">${topResultBadge}${displayName}</span>
                     </div>
                     <span class="result-score">${semanticScore}</span>
                 </div>
@@ -218,7 +218,7 @@ function selectResult(index) {
     
     let mediaHtml = `<div class="preview-icon-large">${icon}</div>`;
     if (res.file_type === 'image') {
-        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" style="max-width: 180px; max-height: 120px;" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
+        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" loading="lazy" style="max-width: 180px; max-height: 120px;" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
     } else if (res.file_type === 'video') {
         mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" style="max-width: 180px; max-height: 120px;" controls autoplay muted loop></video>`;
     } else if (res.file_type === 'audio') {
