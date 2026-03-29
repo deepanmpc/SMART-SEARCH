@@ -28,7 +28,7 @@ The `.github/workflows/deploy-website.yml` file auto-deploys on every push.
 2. Set Source to "GitHub Actions"
 3. Push any commit — site will deploy automatically
 
-**Live URL:** `https://deepanmpc.github.io/SMART-SEARCH/website/`
+**Live URL:** `https://deepanmpc.github.io/SMART-SEARCH/`
 
 ## Design System
 - **Font:** Inter (Google Fonts)
