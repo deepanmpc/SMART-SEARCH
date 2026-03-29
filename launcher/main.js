@@ -104,10 +104,11 @@ app.whenReady().then(() => {
   const ret = globalShortcut.register('CommandOrControl+Shift+Space', () => {
     if (!mainWindow) {
       createWindow();
-      setTimeout(() => {
+      // On creation, show immediately when ready
+      mainWindow.once('ready-to-show', () => {
         mainWindow.show();
         mainWindow.focus();
-      }, 200);
+      });
       return;
     }
 

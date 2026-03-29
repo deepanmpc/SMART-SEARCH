@@ -107,7 +107,7 @@ if (wizardBack2) wizardBack2.onclick = () => showStep(1);
 if (wizardNext2) wizardNext2.onclick = async () => {
     const key = apiKeyInput.value.trim();
     if (!key || key.length < 20) {
-        alert("Please enter a valid Gemini API Key.");
+        displayInfo("⚠️ Please enter a valid Gemini API Key.");
         return;
     }
     await ipcRenderer.invoke('save-config', { google_api_key: key });
@@ -119,7 +119,27 @@ if (getKeyBtn) getKeyBtn.onclick = () => {
 };
 if (helpBtn) helpBtn.onclick = () => {
     ipcRenderer.send('open-docs');
-    displayInfo('💡 <b>Quick Tips:</b><br>• <b>Enter:</b> Open File<br>• <b>Space:</b> Preview<br>• <b>Cmd+Shift+Space:</b> Toggle App<br>• <b>ask query:</b> AI Assistant mode');
+    const tips = [
+        "<b>Enter:</b> Open File",
+        "<b>Space:</b> Preview File",
+        "<b>Cmd+Shift+Space:</b> Toggle Launcher",
+        "<b>ask query:</b> AI Assistant mode",
+        "<b>Shift + Arrow:</b> Cycle Filters"
+    ];
+    const randomTip = tips[Math.floor(Math.random() * tips.length)];
+    displayInfo(`
+        <div style="text-align: left; padding: 10px;">
+            <div style="margin-bottom: 15px;">
+                <h4 style="color: var(--accent); margin-bottom: 5px;">🔒 Privacy First</h4>
+                <p style="font-size: 11px; opacity: 0.8; line-height: 1.4;">Smart Search runs 100% locally. Your files never leave your machine. Only semantic embeddings are generated via your Gemini API key.</p>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <h4 style="color: var(--accent); margin-bottom: 5px;">💡 Quick Tip</h4>
+                <p style="font-size: 11px; opacity: 0.8; line-height: 1.4;">${randomTip}</p>
+            </div>
+            <div style="font-size: 10px; opacity: 0.5;">Documentation opened in background.</div>
+        </div>
+    `);
 };
 
 fetchStats();
@@ -506,11 +526,11 @@ async function startIndexing(paths) {
             if (data.message && data.message.includes("already in progress")) {
                 startPollingProgress();
             } else {
-                alert(`Indexing failed: ${data.message || data.detail}`);
+                displayInfo(`❌ Indexing failed: ${data.message || data.detail}`);
             }
         }
     } catch (e) {
-        alert('❌ Index API error.');
+        displayInfo('❌ Index API error. Make sure backend is running.');
     }
 }
 
@@ -528,10 +548,10 @@ async function deleteIndex() {
                 updateWindowSize();
             }, 2000);
         } else {
-            alert(`Delete failed: ${data.detail}`);
+            displayInfo(`❌ Delete failed: ${data.detail}`);
         }
     } catch (e) {
-        alert('❌ Delete API error.');
+        displayInfo('❌ Delete API error.');
     }
 }
 
