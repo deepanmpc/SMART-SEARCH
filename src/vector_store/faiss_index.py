@@ -10,11 +10,14 @@ import faiss
 
 
 class FaissIndex:
-    """Wrapper around FAISS IndexFlatIP (cosine similarity via L2 normalization)."""
+    """Wrapper around FAISS IndexHNSWFlat for scalable cosine similarity search."""
 
     def __init__(self, dimension: int = 768):
         self.dimension = dimension
-        self.index = faiss.IndexFlatIP(dimension)
+        # Use HNSW for fast, scalable approximate nearest neighbor search
+        self.index = faiss.IndexHNSWFlat(dimension, 32)
+        self.index.hnsw.efConstruction = 40
+        self.index.hnsw.efSearch = 16
 
     def add(self, embeddings: List[List[float]]) -> List[int]:
         """Add vectors. Returns assigned vector IDs."""

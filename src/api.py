@@ -165,15 +165,20 @@ def get_stats():
         ram_limit_mb=ram_limit
     )
 
+from functools import lru_cache
+
+@lru_cache(maxsize=50)
+def _cached_semantic_search(query: str, top_k: int, index_path: str, db_path: str):
+    return semantic_search(query, top_k=top_k, index_path=index_path, db_path=db_path)
+
 @app.post("/search", response_model=SearchResponse)
 def search_endpoint(req: SearchRequest):
-    # Optimize: Increase fetching multiplier for all queries to ensure images surface, 
+    # Optimize: Increase fetching multiplier for all queries to ensure images surface,
     # even when text scores highly.
     multiplier = 50 if req.file_type == "image" else 5
     search_k = req.top_k * multiplier
-    
-    results = semantic_search(req.query, top_k=search_k, index_path=INDEX_PATH, db_path=DB_PATH)
-    
+
+    results = _cached_semantic_search(req.query, search_k, INDEX_PATH, DB_PATH)    
     # Mapping friendly categories to database types
     TYPE_MAP = {
         "text": ["text", "pdf", "docx", "pptx"],
@@ -292,6 +297,8 @@ def get_index_status():
         
     return IndexStatusResponse(**INDEX_PROGRESS)
 
+from concurrent.futures import ThreadPoolExecutor
+
 def run_indexing(paths: List[str], is_update: bool = False):
     global INDEX_PROGRESS, WATCHER_OBSERVER
     import time as time_mod
@@ -312,7 +319,6 @@ def run_indexing(paths: List[str], is_update: bool = False):
                 folder = os.path.expanduser(p)
                 all_found.extend(_crawl(folder, stop_event=STOP_INDEXING_EVENT))
         else:
-            # watcher sends direct file paths
             from crawler import SUPPORTED_EXTENSIONS
             for p in paths:
                 if STOP_INDEXING_EVENT.is_set(): break
@@ -334,42 +340,32 @@ def run_indexing(paths: List[str], is_update: bool = False):
         
         limit = PLAN_LIMITS.get(CURRENT_PLAN, 50000)
         from ingestion.media_parser import chunk_image, chunk_video
-
-        for i, fm in enumerate(all_found):
-            # PAUSE LOGIC
+        
+        def process_file(index_and_file):
+            i, fm = index_and_file
+            
+            # PAUSE/STOP check
             while not is_update and PAUSE_INDEXING_EVENT.is_set() and not STOP_INDEXING_EVENT.is_set():
                 time_mod.sleep(0.5)
-            
-            # STOP LOGIC
             if not is_update and STOP_INDEXING_EVENT.is_set(): 
-                break
+                return
                 
             if not is_update:
                 INDEX_PROGRESS["current_file"] = fm["filename"]
-                INDEX_PROGRESS["processed_files"] = i
-                INDEX_PROGRESS["percentage"] = round((i / INDEX_PROGRESS["total_files"]) * 100, 1)
+                # Processed files incremented at end of this function
 
-            # Check limit
-            # Move lock inside loop for specific actions
             with INDEXING_LOCK:
                 faiss_idx = FaissIndex()
-                if Path(INDEX_PATH).exists():
-                    faiss_idx.load(INDEX_PATH)
-                if faiss_idx.total_vectors >= limit:
-                    break
+                if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
+                if faiss_idx.total_vectors >= limit: return
                     
                 conn = init_db(DB_PATH)
                 if is_document_indexed(conn, fm["path"]):
-                    if is_update:
-                        clear_document(conn, fm["path"])
-                    else:
-                        continue
-            
-            total_chunks_added_for_file = 0
-            
-            # Media / Text ingestion logic
-            if fm["type"] in ("image", "audio", "video"):
-                try:
+                    if is_update: clear_document(conn, fm["path"])
+                    else: return
+
+            try:
+                if fm["type"] in ("image", "audio", "video"):
                     media_chunks = []
                     if fm["type"] == "image":
                         with open(fm["path"], "rb") as bf: img_bytes = bf.read()
@@ -382,94 +378,74 @@ def run_indexing(paths: List[str], is_update: bool = False):
                         if not mime_type: mime_type = f"audio/{fm['ext'][1:]}"
                         media_chunks = [{"type": "audio", "data": data, "mime_type": mime_type, "suffix": "full"}]
 
-                    if not media_chunks: continue
-
-                    batch_size = 16
-                    for b_idx in range(0, len(media_chunks), batch_size):
-                        # Frequent Stop/Pause check
-                        while not is_update and PAUSE_INDEXING_EVENT.is_set() and not STOP_INDEXING_EVENT.is_set():
-                            time_mod.sleep(0.5)
-                        if not is_update and STOP_INDEXING_EVENT.is_set(): break
-
-                        batch = media_chunks[b_idx : b_idx + batch_size]
-                        units = []
-                        for c in batch:
-                            if fm["type"] == "audio": units.append({"type": "audio", "data": c["data"], "mime_type": c["mime_type"]})
-                            else: units.append({"type": "image", "data": c["data"], "mime_type": "image/jpeg"})
-                        
-                        vecs = embed_batch(units) or []
-                        
-                        # LOCK FOR WRITING
-                        with INDEXING_LOCK:
-                            faiss_idx = FaissIndex()
-                            if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
-                            conn = init_db(DB_PATH)
+                    if media_chunks:
+                        batch_size = 16
+                        for b_idx in range(0, len(media_chunks), batch_size):
+                            while not is_update and PAUSE_INDEXING_EVENT.is_set() and not STOP_INDEXING_EVENT.is_set(): time_mod.sleep(0.5)
+                            if not is_update and STOP_INDEXING_EVENT.is_set(): break
                             
-                            for idx_in_batch, (c, vec) in enumerate(zip(batch, vecs)):
-                                idx = b_idx + idx_in_batch
-                                if vec is not None:
-                                    if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                                        faiss_idx = FaissIndex(dimension=len(vec))
-                                    vector_ids = faiss_idx.add([vec])
-                                    file_id = make_file_id(fm["path"], idx)
-                                    desc = f"[{fm['type'].capitalize()} Content]"
-                                    insert_chunk(conn, vector_ids[0], file_id, fm, idx, desc)
-                            faiss_idx.save(INDEX_PATH)
+                            batch = media_chunks[b_idx : b_idx + batch_size]
+                            units = [{"type": "audio" if fm["type"] == "audio" else "image", "data": c["data"], "mime_type": c.get("mime_type", "image/jpeg")} for c in batch]
+                            vecs = embed_batch(units) or []
                             
-                except Exception as e:
-                    print(f"Failed media {fm['path']}: {e}")
-                    if "429" in str(e) or "quota" in str(e).lower():
-                        STOP_INDEXING_EVENT.set()
-                        break
-            else:
-                try:
+                            with INDEXING_LOCK:
+                                faiss_idx = FaissIndex()
+                                if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
+                                conn = init_db(DB_PATH)
+                                for idx_in_batch, (c, vec) in enumerate(zip(batch, vecs)):
+                                    if vec is not None:
+                                        v_ids = faiss_idx.add([vec])
+                                        f_id = make_file_id(fm["path"], b_idx + idx_in_batch)
+                                        desc = f"[{fm['type'].capitalize()} Content]"
+                                        insert_chunk(conn, v_ids[0], f_id, fm, b_idx + idx_in_batch, desc)
+                                faiss_idx.save(INDEX_PATH)
+                else:
                     result = parse_document(fm["path"])
-                    if not result["success"]: continue
-                    chunks = chunk_text(result["text"])
-                    if not chunks: continue
+                    if result["success"]:
+                        chunks = chunk_text(result["text"])
+                        if chunks:
+                            batch_size = 50
+                            for b_idx in range(0, len(chunks), batch_size):
+                                while not is_update and PAUSE_INDEXING_EVENT.is_set() and not STOP_INDEXING_EVENT.is_set(): time_mod.sleep(0.5)
+                                if not is_update and STOP_INDEXING_EVENT.is_set(): break
+                                batch = chunks[b_idx : b_idx + batch_size]
+                                units = [{"type": "text", "data": c} for c in batch]
+                                vecs = embed_batch(units) or []
+                                with INDEXING_LOCK:
+                                    faiss_idx = FaissIndex()
+                                    if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
+                                    conn = init_db(DB_PATH)
+                                    for idx_in_batch, (txt, vec) in enumerate(zip(batch, vecs)):
+                                        if vec is not None:
+                                            v_ids = faiss_idx.add([vec])
+                                            f_id = make_file_id(fm["path"], b_idx + idx_in_batch)
+                                            insert_chunk(conn, v_ids[0], f_id, fm, b_idx + idx_in_batch, txt)
+                                    faiss_idx.save(INDEX_PATH)
+            except Exception as e:
+                print(f"Error processing {fm['path']}: {e}")
+            
+            if not is_update:
+                INDEX_PROGRESS["processed_files"] += 1
+                INDEX_PROGRESS["percentage"] = round((INDEX_PROGRESS["processed_files"] / INDEX_PROGRESS["total_files"]) * 100, 1)
 
-                    batch_size = 50 
-                    for b_idx in range(0, len(chunks), batch_size):
-                        # Frequent Stop/Pause check
-                        while not is_update and PAUSE_INDEXING_EVENT.is_set() and not STOP_INDEXING_EVENT.is_set():
-                            time_mod.sleep(0.5)
-                        if not is_update and STOP_INDEXING_EVENT.is_set(): break
-
-                        batch = chunks[b_idx : b_idx + batch_size]
-                        units = [{"type": "text", "data": c} for c in batch]
-                        vecs = embed_batch(units) or []
-                        
-                        # LOCK FOR WRITING
-                        with INDEXING_LOCK:
-                            faiss_idx = FaissIndex()
-                            if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
-                            conn = init_db(DB_PATH)
-                            
-                            for idx_in_batch, (chunk_text_content, vec) in enumerate(zip(batch, vecs)):
-                                idx = b_idx + idx_in_batch
-                                if vec is not None:
-                                    if faiss_idx.total_vectors == 0 and faiss_idx.dimension != len(vec):
-                                        faiss_idx = FaissIndex(dimension=len(vec))
-                                    vector_ids = faiss_idx.add([vec])
-                                    file_id = make_file_id(fm["path"], idx)
-                                    insert_chunk(conn, vector_ids[0], file_id, fm, idx, chunk_text_content)
-                            faiss_idx.save(INDEX_PATH)
-                            
-                except Exception as e:
-                    print(f"Failed text {fm['path']}: {e}")
-                    if "429" in str(e) or "quota" in str(e).lower():
-                        STOP_INDEXING_EVENT.set()
-                        break
+        # Use ThreadPoolExecutor for parallel processing
+        max_workers = min(os.cpu_count() or 4, 8) # Cap workers to avoid overwhelming API or SQLite
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            executor.map(process_file, enumerate(all_found))
 
         if not is_update:
-            INDEX_PROGRESS["processed_files"] = i + 1 if STOP_INDEXING_EVENT.is_set() else INDEX_PROGRESS["total_files"]
-            INDEX_PROGRESS["percentage"] = 100.0 if not STOP_INDEXING_EVENT.is_set() else INDEX_PROGRESS["percentage"]
+            INDEX_PROGRESS["percentage"] = 100.0
             INDEX_PROGRESS["eta_seconds"] = 0.0
-            if not STOP_INDEXING_EVENT.is_set():
-                time_mod.sleep(2)
             INDEX_PROGRESS["is_indexing"] = False
             STOP_INDEXING_EVENT.clear()
             PAUSE_INDEXING_EVENT.clear()
+    except Exception as e:
+        print(f"Error in background indexing: {e}")
+        if not is_update:
+            INDEX_PROGRESS["is_indexing"] = False
+            STOP_INDEXING_EVENT.clear()
+            PAUSE_INDEXING_EVENT.clear()
+
     except Exception as e:
         print(f"Error in background indexing: {e}")
         if not is_update:

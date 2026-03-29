@@ -4,9 +4,39 @@
   "description": "Spotlight-style AI Launcher for SMART SEARCH",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir"
   },
   "dependencies": {
-    "electron": "^30.0.0"
+    "electron": "^30.0.0",
+    "electron-log": "^5.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.deepan.smartsearch",
+    "productName": "Smart Search",
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": ["**/*"]
+      }
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
   }
 }

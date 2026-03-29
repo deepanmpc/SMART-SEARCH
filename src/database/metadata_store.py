@@ -12,6 +12,12 @@ DB_PATH = str(Path(__file__).parent.parent.parent / "metadata.db")
 def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    
+    # Performance pragmas
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA cache_size=10000;")
+    
     conn.execute("""
         CREATE TABLE IF NOT EXISTS chunks (
             vector_id INTEGER PRIMARY KEY,

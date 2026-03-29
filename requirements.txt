@@ -13,3 +13,4 @@ watchdog
 rank-bm25
 pillow
 opencv-python
+pyinstaller

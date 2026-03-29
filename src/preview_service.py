@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 from PyPDF2 import PdfReader
 
+from functools import lru_cache
+
+@lru_cache(maxsize=100)
 def generate_preview(file_path: str) -> dict:
     if not os.path.exists(file_path):
         return {"error": "File not found"}
