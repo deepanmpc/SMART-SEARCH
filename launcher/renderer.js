@@ -31,7 +31,7 @@ let currentResults = [];
 let selectedIndex = -1;
 
 const PLACEHOLDERS = {
-    all: '✦ smart_search magic',
+    all: '✦ search with magic',
     text: '≣ Search docs',
     image: '▣ Search pics',
     video: '🎞️ Search video',
@@ -257,7 +257,7 @@ async function selectResult(index) {
 
     let mediaHtml = `<div class="preview-icon-large">${icon}</div>`;
     if (res.file_type === 'image') {
-        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" loading="lazy" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
+        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" loading="lazy" onerror="this.outerHTML='<div class=\'preview-icon-large\'>${icon}</div>'">`;
     } else if (res.file_type === 'video') {
         mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" controls autoplay muted loop></video>`;
     } else if (res.file_type === 'audio') {
@@ -285,8 +285,12 @@ async function selectResult(index) {
         });
         const pData = await pRes.json();
         const enhancedEl = document.getElementById('enhancedPreview');
-        if (enhancedEl && pData.content) {
-            enhancedEl.innerHTML = `<pre style="white-space: pre-wrap; font-size: 11px; font-family: 'SF Mono', monospace; opacity: 0.9;">${pData.content}</pre>`;
+        if (enhancedEl) {
+            if (pData.content) {
+                enhancedEl.innerHTML = `<pre style="white-space: pre-wrap; font-size: 11px; font-family: 'SF Mono', monospace; opacity: 0.9;">${pData.content}</pre>`;
+            } else {
+                enhancedEl.innerHTML = '';
+            }
             const metaEl = document.querySelector('.preview-meta');
             if (metaEl) metaEl.innerText = `${semanticScore} • ${friendlyType} • ${pData.size_mb} MB`;
         }
@@ -399,7 +403,7 @@ async function handleCommand(val) {
     if (val.startsWith('ask ')) {
         const query = val.replace('ask ', '');
         showLoading();
-        displayInfo(`Thinking about "${query}"...`);
+        displayInfo(`Thinking about "${query}"... `);
         try {
             const res = await fetch(`${API_URL}/ask`, {
                 method: 'POST',
@@ -532,7 +536,7 @@ function setActiveFilter(type) {
     filterChips.forEach(c => {
         c.classList.toggle('active', c.getAttribute('data-type') === type);
     });
-    searchInput.placeholder = PLACEHOLDERS[type] || 'smart_search magic';
+    searchInput.placeholder = PLACEHOLDERS[type] || 'search with magic';
     
     const val = searchInput.value.trim();
     if (val) handleCommand(val);

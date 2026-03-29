@@ -299,6 +299,10 @@ def run_indexing(paths: List[str], is_update: bool = False):
     if not is_update:
         STOP_INDEXING_EVENT.clear()
         PAUSE_INDEXING_EVENT.clear()
+        INDEX_PROGRESS["is_indexing"] = True
+        INDEX_PROGRESS["is_paused"] = False
+        INDEX_PROGRESS["processed_files"] = 0
+        INDEX_PROGRESS["percentage"] = 0.0
     
     try:
         all_found = []
@@ -306,11 +310,12 @@ def run_indexing(paths: List[str], is_update: bool = False):
             for p in paths:
                 if STOP_INDEXING_EVENT.is_set(): break
                 folder = os.path.expanduser(p)
-                all_found.extend(_crawl(folder))
+                all_found.extend(_crawl(folder, stop_event=STOP_INDEXING_EVENT))
         else:
             # watcher sends direct file paths
             from crawler import SUPPORTED_EXTENSIONS
             for p in paths:
+                if STOP_INDEXING_EVENT.is_set(): break
                 if os.path.isfile(p):
                     ext = os.path.splitext(p)[1].lower()
                     fm_type = SUPPORTED_EXTENSIONS.get(ext, "text")
@@ -318,14 +323,14 @@ def run_indexing(paths: List[str], is_update: bool = False):
 
         if not all_found or (not is_update and STOP_INDEXING_EVENT.is_set()):
             if not is_update: INDEX_PROGRESS["is_indexing"] = False
+            STOP_INDEXING_EVENT.clear()
+            PAUSE_INDEXING_EVENT.clear()
             return
             
         if not is_update:
             INDEX_PROGRESS["total_files"] = len(all_found)
             INDEX_PROGRESS["processed_files"] = 0
             INDEX_PROGRESS["start_time"] = time_mod.time()
-            INDEX_PROGRESS["is_indexing"] = True
-            INDEX_PROGRESS["is_paused"] = False
         
         limit = PLAN_LIMITS.get(CURRENT_PLAN, 50000)
         from ingestion.media_parser import chunk_image, chunk_video
@@ -368,9 +373,9 @@ def run_indexing(paths: List[str], is_update: bool = False):
                     media_chunks = []
                     if fm["type"] == "image":
                         with open(fm["path"], "rb") as bf: img_bytes = bf.read()
-                        media_chunks = chunk_image(img_bytes)
+                        media_chunks = chunk_image(img_bytes, stop_event=STOP_INDEXING_EVENT if not is_update else None)
                     elif fm["type"] == "video":
-                        media_chunks = chunk_video(fm["path"])
+                        media_chunks = chunk_video(fm["path"], stop_event=STOP_INDEXING_EVENT if not is_update else None)
                     elif fm["type"] == "audio":
                         with open(fm["path"], "rb") as bf: data = bf.read()
                         mime_type, _ = mimetypes.guess_type(fm["path"])
@@ -381,7 +386,11 @@ def run_indexing(paths: List[str], is_update: bool = False):
 
                     batch_size = 16
                     for b_idx in range(0, len(media_chunks), batch_size):
+                        # Frequent Stop/Pause check
+                        while not is_update and PAUSE_INDEXING_EVENT.is_set() and not STOP_INDEXING_EVENT.is_set():
+                            time_mod.sleep(0.5)
                         if not is_update and STOP_INDEXING_EVENT.is_set(): break
+
                         batch = media_chunks[b_idx : b_idx + batch_size]
                         units = []
                         for c in batch:
@@ -421,7 +430,11 @@ def run_indexing(paths: List[str], is_update: bool = False):
 
                     batch_size = 50 
                     for b_idx in range(0, len(chunks), batch_size):
+                        # Frequent Stop/Pause check
+                        while not is_update and PAUSE_INDEXING_EVENT.is_set() and not STOP_INDEXING_EVENT.is_set():
+                            time_mod.sleep(0.5)
                         if not is_update and STOP_INDEXING_EVENT.is_set(): break
+
                         batch = chunks[b_idx : b_idx + batch_size]
                         units = [{"type": "text", "data": c} for c in batch]
                         vecs = embed_batch(units) or []
@@ -452,7 +465,8 @@ def run_indexing(paths: List[str], is_update: bool = False):
             INDEX_PROGRESS["processed_files"] = i + 1 if STOP_INDEXING_EVENT.is_set() else INDEX_PROGRESS["total_files"]
             INDEX_PROGRESS["percentage"] = 100.0 if not STOP_INDEXING_EVENT.is_set() else INDEX_PROGRESS["percentage"]
             INDEX_PROGRESS["eta_seconds"] = 0.0
-            time_mod.sleep(2)
+            if not STOP_INDEXING_EVENT.is_set():
+                time_mod.sleep(2)
             INDEX_PROGRESS["is_indexing"] = False
             STOP_INDEXING_EVENT.clear()
             PAUSE_INDEXING_EVENT.clear()
@@ -462,6 +476,7 @@ def run_indexing(paths: List[str], is_update: bool = False):
             INDEX_PROGRESS["is_indexing"] = False
             STOP_INDEXING_EVENT.clear()
             PAUSE_INDEXING_EVENT.clear()
+
 
 from preview_service import generate_preview
 

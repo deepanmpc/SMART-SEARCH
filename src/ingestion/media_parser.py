@@ -8,7 +8,7 @@ import io
 from PIL import Image
 import cv2
 
-def chunk_image(image_bytes: bytes, max_dim: int = 1024, overlap: int = 256) -> list[dict]:
+def chunk_image(image_bytes: bytes, max_dim: int = 1024, overlap: int = 256, stop_event=None) -> list[dict]:
     """
     If the image is larger than `max_dim` in either dimension, it crops the 
     image into overlapping tiles. Otherwise, it returns the whole image.
@@ -27,8 +27,10 @@ def chunk_image(image_bytes: bytes, max_dim: int = 1024, overlap: int = 256) -> 
     chunks = []
     y = 0
     while y < height:
+        if stop_event and stop_event.is_set(): break
         x = 0
         while x < width:
+            if stop_event and stop_event.is_set(): break
             box = (x, y, min(x + max_dim, width), min(y + max_dim, height))
             tile = img.crop(box)
             
@@ -45,7 +47,7 @@ def chunk_image(image_bytes: bytes, max_dim: int = 1024, overlap: int = 256) -> 
 
     return chunks
 
-def chunk_video(video_path: str, threshold: float = 20.0, min_interval: int = 2, max_interval: int = 15) -> list[dict]:
+def chunk_video(video_path: str, threshold: float = 20.0, min_interval: int = 2, max_interval: int = 15, stop_event=None) -> list[dict]:
     """
     Extracts frames using scene change detection.
     Optimized for CPU: Skips decoding frames using grab(), downscales frames to 128x128
@@ -66,6 +68,8 @@ def chunk_video(video_path: str, threshold: float = 20.0, min_interval: int = 2,
     frame_count = 0
 
     while True:
+        if stop_event and stop_event.is_set(): break
+        
         # Fast-forward without decoding (saves immense CPU)
         success = cap.grab()
         if not success: break

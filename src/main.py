@@ -81,7 +81,7 @@ def _vector_count() -> int:
     except Exception:
         return 0
 
-def _crawl(folder: str) -> list[dict]:
+def _crawl(folder: str, stop_event=None) -> list[dict]:
     files = []
     base_path = Path(folder)
     
@@ -89,9 +89,12 @@ def _crawl(folder: str) -> list[dict]:
     if base_path.is_file():
         paths = [base_path]
     else:
-        paths = list(base_path.rglob("*"))
+        # rglob is lazy, but list() consumes it. Let's iterate directly.
+        paths = base_path.rglob("*")
 
     for path in paths:
+        if stop_event and stop_event.is_set():
+            break
         if any(p in SKIP_DIRS for p in path.parts):
             continue
         if path.is_file() and path.suffix.lower() in SUPPORTED:

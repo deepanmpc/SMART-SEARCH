@@ -1,12 +1,15 @@
 google-genai
 PyPDF2
 python-docx
+python-pptx
 tika
 faiss-cpu
 numpy
-python-pptx
 fastapi
 uvicorn
 pydantic
 psutil
-PyPDF2
+watchdog
+rank-bm25
+pillow
+opencv-python
