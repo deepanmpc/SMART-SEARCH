@@ -22,9 +22,10 @@ cd launcher
 npm install
 
 echo "3. Packaging Electron App with electron-builder..."
-# Notice we added extraResources in package.json to pack the launcher/backend folder into the app
-npm run pack
+# Build distributable installers (.dmg, .exe, .AppImage)
+npm run build
 
 echo "====================================="
 echo " Build successful! Output is in launcher/dist"
+echo " Look for .dmg (macOS), .exe (Windows), .AppImage (Linux)"
 echo "====================================="

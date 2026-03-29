@@ -43,11 +43,11 @@ let currentResults = [];
 let selectedIndex = -1;
 
 const PLACEHOLDERS = {
-    all: '✦ search with magic',
-    text: '≣ Search docs',
-    image: '▣ Search pics',
-    video: '🎞️ Search video',
-    audio: '≋ Search audio'
+    all: 'Search files or ask AI... (e.g. "image of a dog")',
+    text: '≣ Search docs (e.g. "notes about neural networks")',
+    image: '▣ Search pics (e.g. "photo of sunset")',
+    video: '🎞️ Search video (e.g. "meeting recording")',
+    audio: '≋ Search audio (e.g. "podcast episode")'
 };
 
 // Fetch stats on load
@@ -459,7 +459,7 @@ async function handleCommand(val) {
             displayAnswer(data.answer);
         } catch (e) {
             hideLoading();
-            displayInfo('❌ Ask API error.');
+            displayInfo('❌ Something went wrong. Please try again.');
         }
         return;
     }
@@ -486,7 +486,7 @@ async function handleCommand(val) {
         displayResults(data.results);
     } catch (e) {
         hideLoading();
-        displayInfo('❌ Search API error. Check if backend is running.');
+        displayInfo('❌ Unable to reach Smart Search backend. Make sure it is running.');
     }
 }
 
