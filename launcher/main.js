@@ -1,8 +1,34 @@
 const { app, BrowserWindow, globalShortcut, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
+const log = require('electron-log');
+
+// Setup logging
+Object.assign(console, log.functions);
+log.transports.file.level = 'info';
 
 let mainWindow;
+let backendProcess = null;
+
+function startBackend() {
+  const isPackaged = app.isPackaged;
+  
+  if (isPackaged) {
+    const exName = process.platform === 'win32' ? 'api.exe' : 'api';
+    const backendPath = path.join(process.resourcesPath, 'backend', exName);
+    log.info(`Starting packaged backend at: ${backendPath}`);
+    backendProcess = spawn(backendPath, [], { stdio: 'inherit' });
+  } else {
+    const pythonPath = path.join(__dirname, '..', '.venv', 'bin', 'python');
+    const scriptPath = path.join(__dirname, '..', 'src', 'api.py');
+    log.info(`Starting local backend with: ${pythonPath} ${scriptPath}`);
+    backendProcess = spawn(pythonPath, [scriptPath], { stdio: 'inherit' });
+  }
+
+  backendProcess.on('error', (err) => {
+    log.error('Failed to start backend process:', err);
+  });
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -40,6 +66,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  startBackend();
   createWindow();
 
   // Register command to toggle window
@@ -78,6 +105,10 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  if (backendProcess) {
+    log.info('Killing backend process...');
+    backendProcess.kill();
+  }
 });
 
 ipcMain.on('resize-window', (event, width, height) => {
