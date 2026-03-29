@@ -76,7 +76,7 @@ function createWindow() {
     resizable: true,
     vibrancy: 'under-window',
     visualEffectState: 'active',
-    show: false, // Start hidden
+    show: true, // Start visible on first launch
     skipTaskbar: true,
     webPreferences: {
       nodeIntegration: true,
@@ -87,7 +87,8 @@ function createWindow() {
   mainWindow.loadFile('index.html');
   
   mainWindow.once('ready-to-show', () => {
-    // Keep it hidden initially, wait for shortcut
+    mainWindow.show();
+    mainWindow.focus();
     console.log('Window preloaded and ready.');
   });
 

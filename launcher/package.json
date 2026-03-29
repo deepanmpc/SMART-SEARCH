@@ -1,6 +1,6 @@
 {
   "name": "smart-search",
-  "version": "26.0.0",
+  "version": "26.0.1",
   "description": "Spotlight-style AI Launcher for SMART SEARCH",
   "main": "main.js",
   "author": "Deepan Chandrasekaran",
