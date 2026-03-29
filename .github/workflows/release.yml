@@ -1,0 +1,163 @@
+name: Build & Release Smart Search
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-backend:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+            binary: api
+          - os: windows-latest
+            platform: win
+            binary: api.exe
+          - os: ubuntu-latest
+            platform: linux
+            binary: api
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build backend binary
+        run: pyinstaller src/api.py --onefile --distpath launcher/backend --name api --log-level WARN
+
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-${{ matrix.platform }}
+          path: launcher/backend/${{ matrix.binary }}
+
+  build-electron:
+    needs: build-backend
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+            target: dmg
+            artifact_glob: '*.dmg'
+          - os: windows-latest
+            platform: win
+            target: nsis
+            artifact_glob: '*.exe'
+          - os: ubuntu-latest
+            platform: linux
+            target: AppImage
+            artifact_glob: '*.AppImage'
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download backend binary
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-${{ matrix.platform }}
+          path: launcher/backend/
+
+      - name: Make backend executable (unix)
+        if: matrix.platform != 'win'
+        run: chmod +x launcher/backend/api
+
+      - name: Install launcher dependencies
+        run: npm install
+        working-directory: launcher
+
+      - name: Build Electron app
+        run: npm run build
+        working-directory: launcher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform }}
+          path: launcher/dist/${{ matrix.artifact_glob }}
+
+  create-release:
+    needs: build-electron
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download macOS installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-mac
+          path: release/
+
+      - name: Download Windows installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-win
+          path: release/
+
+      - name: Download Linux installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-linux
+          path: release/
+
+      - name: List release files
+        run: ls -la release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || github.event.inputs.version }}
+          name: Smart Search ${{ github.ref_name || github.event.inputs.version }}
+          body: |
+            ## Smart Search ${{ github.ref_name || github.event.inputs.version }}
+
+            AI Spotlight for your Computer — search images, videos, audio, and documents using natural language.
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | 🍎 macOS | `Smart Search.dmg` |
+            | 🪟 Windows | `Smart Search Setup.exe` |
+            | 🐧 Linux | `Smart Search.AppImage` |
+
+            ### What's New
+            - First public release
+            - Multimodal semantic search (images, videos, audio, documents)
+            - AI Ask mode for natural language Q&A over your files
+            - Instant preview panel
+            - Privacy-first: everything runs locally
+
+            ### Requirements
+            - A free [Google Gemini API key](https://aistudio.google.com/app/apikey)
+          files: release/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

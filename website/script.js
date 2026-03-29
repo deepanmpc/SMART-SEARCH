@@ -29,7 +29,7 @@ mobileMenu.querySelectorAll('a').forEach(a => {
 
 // ─── Scroll reveal animation ───
 const revealEls = document.querySelectorAll(
-  '.feature-card, .pipeline-step, .download-card, .doc-card, .demo-step, .stat-item, .shortcut-item'
+  '.feature-card, .pipeline-step, .download-card, .doc-card, .demo-step, .stat-item, .shortcut-item, .example-card'
 );
 revealEls.forEach(el => el.classList.add('reveal'));
 
