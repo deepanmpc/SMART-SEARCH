@@ -4,6 +4,10 @@
   "description": "Spotlight-style AI Launcher for SMART SEARCH",
   "main": "main.js",
   "author": "Deepan Chandrasekaran",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepanmpc/SMART-SEARCH.git"
+  },
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
@@ -19,6 +23,11 @@
   "build": {
     "appId": "ai.smartsearch.app",
     "productName": "SMART SEARCH",
+    "publish": {
+      "provider": "github",
+      "owner": "deepanmpc",
+      "repo": "SMART-SEARCH"
+    },
     "mac": {
       "target": "dmg",
       "category": "public.app-category.utilities",
