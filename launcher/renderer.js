@@ -22,6 +22,18 @@ const stopIndexingBtn = document.getElementById('stopIndexingBtn');
 const pauseIndexingBtn = document.getElementById('pauseIndexingBtn');
 const setupWizard = document.getElementById('setupWizard');
 const setupStartBtn = document.getElementById('setupStartBtn');
+const helpBtn = document.getElementById('helpBtn');
+
+const wizardNext1 = document.getElementById('wizardNext1');
+const wizardNext2 = document.getElementById('wizardNext2');
+const wizardBack2 = document.getElementById('wizardBack2');
+const wizardBack3 = document.getElementById('wizardBack3');
+const getKeyBtn = document.getElementById('getKeyBtn');
+const apiKeyInput = document.getElementById('apiKeyInput');
+
+const step1 = document.getElementById('wizardStep1');
+const step2 = document.getElementById('wizardStep2');
+const step3 = document.getElementById('wizardStep3');
 
 const API_URL = 'http://localhost:8000';
 let debounceTimer;
@@ -41,6 +53,9 @@ const PLACEHOLDERS = {
 // Fetch stats on load
 async function fetchStats() {
     try {
+        const config = await ipcRenderer.invoke('get-config');
+        const hasKey = !!config.google_api_key;
+
         const res = await fetch(`${API_URL}/stats`);
         const data = await res.json();
         
@@ -66,9 +81,11 @@ async function fetchStats() {
             startPollingProgress();
         }
 
-        // Show Setup Wizard only if index is empty AND not indexing
-        if (data.total_chunks === 0 && !statusData.is_indexing) {
+        // Show Setup Wizard only if index is empty AND not indexing OR if key is missing
+        if ((data.total_chunks === 0 && !statusData.is_indexing) || !hasKey) {
             setupWizard.classList.remove('hidden');
+            if (!hasKey) showStep(2); // Jump to API key if that's all that's missing
+            else if (data.total_chunks === 0) showStep(1);
         } else {
             setupWizard.classList.add('hidden');
         }
@@ -77,6 +94,33 @@ async function fetchStats() {
         console.error('Failed to fetch stats', e);
     }
 }
+
+function showStep(num) {
+    [step1, step2, step3].forEach((s, i) => {
+        s.classList.toggle('hidden', i + 1 !== num);
+    });
+}
+
+// Wizard Event Listeners
+if (wizardNext1) wizardNext1.onclick = () => showStep(2);
+if (wizardBack2) wizardBack2.onclick = () => showStep(1);
+if (wizardNext2) wizardNext2.onclick = async () => {
+    const key = apiKeyInput.value.trim();
+    if (!key || key.length < 20) {
+        alert("Please enter a valid Gemini API Key.");
+        return;
+    }
+    await ipcRenderer.invoke('save-config', { google_api_key: key });
+    showStep(3);
+};
+if (wizardBack3) wizardBack3.onclick = () => showStep(2);
+if (getKeyBtn) getKeyBtn.onclick = () => {
+    require('electron').shell.openExternal('https://aistudio.google.com/app/apikey');
+};
+if (helpBtn) helpBtn.onclick = () => {
+    ipcRenderer.send('open-docs');
+    displayInfo('💡 <b>Quick Tips:</b><br>• <b>Enter:</b> Open File<br>• <b>Space:</b> Preview<br>• <b>Cmd+Shift+Space:</b> Toggle App<br>• <b>ask query:</b> AI Assistant mode');
+};
 
 fetchStats();
 // Periodically refresh stats to keep UI sync'd

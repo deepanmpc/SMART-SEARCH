@@ -9,13 +9,46 @@
   <div class="launcher-container">
     <!-- Setup Wizard -->
     <div id="setupWizard" class="hidden">
-      <div class="answer-box" style="padding: 32px; text-align: center;">
-        <h2 style="margin-bottom: 12px; color: #007aff;">✨ Welcome to Smart Search</h2>
-        <p style="margin-bottom: 24px; opacity: 0.8; line-height: 1.5;">Let's get you set up. Choose a folder to index so you can start searching with AI magic.</p>
-        <button id="setupStartBtn" style="background: #007aff; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;">Choose Folder & Begin</button>
-        <div style="margin-top: 16px; font-size: 11px; opacity: 0.5;">Your files never leave this machine. Securely indexed by Gemini local embedder.</div>
+      <div class="answer-box wizard-card" style="padding: 40px; text-align: center; max-width: 500px;">
+        
+        <!-- Step 1: Welcome -->
+        <div id="wizardStep1" class="wizard-step">
+          <div class="wizard-icon">✨</div>
+          <h2 style="margin-bottom: 12px; color: #007aff;">Welcome to Smart Search</h2>
+          <p style="margin-bottom: 24px; opacity: 0.8; line-height: 1.6;">Search your entire computer with the power of Google Gemini. Let's get you set up in less than 2 minutes.</p>
+          <button id="wizardNext1" class="primary-btn">Get Started</button>
+        </div>
+
+        <!-- Step 2: API Key -->
+        <div id="wizardStep2" class="wizard-step hidden">
+          <div class="wizard-icon">🔑</div>
+          <h2 style="margin-bottom: 12px;">Gemini API Key</h2>
+          <p style="margin-bottom: 16px; opacity: 0.7; font-size: 13px;">Smart Search uses Gemini models. You'll need an API key from Google AI Studio.</p>
+          <div class="input-group">
+            <input type="password" id="apiKeyInput" placeholder="Paste your API key here" autocomplete="off">
+            <button id="getKeyBtn" class="text-btn">Get API Key from Google ↗</button>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+            <button id="wizardBack2" class="secondary-btn">Back</button>
+            <button id="wizardNext2" class="primary-btn">Save & Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Folder Selection -->
+        <div id="wizardStep3" class="wizard-step hidden">
+          <div class="wizard-icon">📁</div>
+          <h2 style="margin-bottom: 12px;">Indexing Source</h2>
+          <p style="margin-bottom: 24px; opacity: 0.8;">Choose a folder to index. Your files stay local, only embeddings are sent to the cloud.</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="wizardBack3" class="secondary-btn">Back</button>
+            <button id="setupStartBtn" class="primary-btn">Choose Folder & Finish</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; font-size: 11px; opacity: 0.5;">Your privacy is protected. Files never leave your machine.</div>
       </div>
     </div>
+
 
     <!-- Spotlight Search Bar -->
     <div class="top-row">
@@ -29,9 +62,12 @@
           <div class="filter-chip" data-type="image" title="Images">▣</div>
           <div class="filter-chip" data-type="video" title="Videos">🎞️</div>
           <div class="filter-chip" data-type="audio" title="Audio">≋</div>
+          <div class="divider"></div>
+          <button id="helpBtn" title="Help & Usage">?</button>
       </div>
       <button id="indexFolderBtn" title="Index a folder">📁</button>
     </div>
+
     
     <!-- Results / Answer Area -->
     <div id="resultsContainer" class="hidden">

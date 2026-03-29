@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Search — AI Spotlight For Your Computer</title>
+  <meta name="description" content="Search images, videos, audio, and documents using natural language. Smart Search is an AI-powered local search engine that runs entirely on your machine.">
+  <meta property="og:title" content="Smart Search — AI Spotlight For Your Computer">
+  <meta property="og:description" content="Search your entire computer with the power of Google Gemini. Privacy-first, blazing fast.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ───────────────────────────── NAV ───────────────────────────── -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <span class="logo-icon">✦</span>
+        <span class="logo-text">Smart Search</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#demo">Demo</a></li>
+        <li><a href="#download">Download</a></li>
+        <li><a href="#docs">Docs</a></li>
+        <li><a href="#creator">About</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="https://github.com/deepanmpc/SMART-SEARCH" target="_blank" class="btn-ghost">GitHub</a>
+        <a href="#download" class="btn-primary-sm">Download</a>
+      </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    </div>
+    <div class="mobile-menu hidden" id="mobileMenu">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#download">Download</a>
+      <a href="#docs">Docs</a>
+      <a href="#creator">About</a>
+    </div>
+  </nav>
+
+  <!-- ───────────────────────────── HERO ───────────────────────────── -->
+  <section id="hero">
+    <div class="hero-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="grid-overlay"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Open Source · Privacy First · Powered by Gemini
+      </div>
+      <h1 class="hero-headline">
+        <span class="headline-line">AI Spotlight</span>
+        <span class="headline-line gradient-text">For Your Computer</span>
+      </h1>
+      <p class="hero-sub">
+        Search images, videos, audio, and documents using natural language.<br>
+        Everything runs locally. Nothing leaves your machine.
+      </p>
+      <div class="hero-ctas">
+        <a href="#download" class="btn-primary">
+          <span>↓</span> Download Free
+        </a>
+        <a href="https://github.com/deepanmpc/SMART-SEARCH" target="_blank" class="btn-outline">
+          <span>⭐</span> View on GitHub
+        </a>
+      </div>
+      <p class="hero-meta">macOS · Windows · Linux &nbsp;·&nbsp; Free &amp; Open Source</p>
+    </div>
+
+    <!-- Animated launcher mockup -->
+    <div class="hero-visual">
+      <div class="launcher-mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+        </div>
+        <div class="mockup-search-row">
+          <span class="mockup-icon">✦</span>
+          <span class="mockup-typing" id="typingText">photo of sunset at beach</span>
+          <span class="mockup-cursor">|</span>
+        </div>
+        <div class="mockup-filters">
+          <span class="mf active">All</span>
+          <span class="mf">Images</span>
+          <span class="mf">Video</span>
+          <span class="mf">Audio</span>
+          <span class="mf">Docs</span>
+        </div>
+        <div class="mockup-results">
+          <div class="mockup-result selected">
+            <span class="mr-icon">▣</span>
+            <div class="mr-info">
+              <div class="mr-name">Photo — Jun 12</div>
+              <div class="mr-snippet">Sunset beach photo from trip</div>
+            </div>
+            <span class="mr-badge">Best Match</span>
+          </div>
+          <div class="mockup-result">
+            <span class="mr-icon">🎞️</span>
+            <div class="mr-info">
+              <div class="mr-name">beach_clip.mp4</div>
+              <div class="mr-snippet">Video · 42 MB</div>
+            </div>
+            <span class="mr-badge">Strong Match</span>
+          </div>
+          <div class="mockup-result">
+            <span class="mr-icon">▣</span>
+            <div class="mr-info">
+              <div class="mr-name">Screenshot — Aug 5</div>
+              <div class="mr-snippet">Similar landscape image</div>
+            </div>
+            <span class="mr-badge">Possible Match</span>
+          </div>
+        </div>
+        <div class="mockup-preview">
+          <div class="preview-thumb">🌅</div>
+          <div class="preview-details">
+            <div class="preview-title">Photo — Jun 12</div>
+            <div class="preview-meta">Best Match · Image · 3.2 MB</div>
+            <div class="preview-path">/Users/deepan/Photos/beach/sunset.jpg</div>
+          </div>
+        </div>
+        <div class="mockup-footer">
+          <span>Index Status: 12,450 / 50,000 chunks</span>
+          <span class="mf-ram">RAM: 142 MB</span>
+        </div>
+      </div>
+      <!-- Floating indicators -->
+      <div class="float-badge float-badge-1">
+        <span class="float-icon">⚡</span>
+        <span>Instant results</span>
+      </div>
+      <div class="float-badge float-badge-2">
+        <span class="float-icon">🔒</span>
+        <span>100% Local</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── STATS ───────────────────────────── -->
+  <section id="stats">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">50K+</div>
+          <div class="stat-label">Files Searchable</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">&lt;400ms</div>
+          <div class="stat-label">Search Response</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">5</div>
+          <div class="stat-label">File Type Categories</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Privacy Preserved</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── FEATURES ───────────────────────────── -->
+  <section id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Features</div>
+        <h2 class="section-title">Search the way your brain thinks</h2>
+        <p class="section-sub">Not by filename. Not by date. By what's actually in the file.</p>
+      </div>
+      <div class="features-grid">
+
+        <div class="feature-card feature-large">
+          <div class="feature-icon-wrap">
+            <div class="feature-icon">🧠</div>
+          </div>
+          <h3>AI Semantic Search</h3>
+          <p>Search your files by meaning instead of filenames. Ask "photo of my dog at a park" and find it instantly — even if it's named IMG_4821.jpg.</p>
+          <div class="feature-tag">Powered by Gemini Embeddings</div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap">
+            <div class="feature-icon">🎨</div>
+          </div>
+          <h3>Multimodal Search</h3>
+          <p>Search across images, videos, audio, PDFs, Word docs, code files — all in one place.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap">
+            <div class="feature-icon">⚡</div>
+          </div>
+          <h3>Real-Time Indexing</h3>
+          <p>Files become searchable automatically. Add a document, it's in your search results within seconds.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap">
+            <div class="feature-icon">👁️</div>
+          </div>
+          <h3>Instant Preview</h3>
+          <p>See image thumbnails, video previews, and text snippets before opening a single file.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap">
+            <div class="feature-icon">🔒</div>
+          </div>
+          <h3>Privacy First</h3>
+          <p>Everything runs locally on your machine. Your files never leave your computer. Only embeddings are computed remotely.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap">
+            <div class="feature-icon">🤖</div>
+          </div>
+          <h3>AI Ask Mode</h3>
+          <p>Ask questions about your files. "What do my PDFs say about transformers?" — get an AI-generated answer from your own content.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── HOW IT WORKS ───────────────────────────── -->
+  <section id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">How It Works</div>
+        <h2 class="section-title">Simple pipeline. Powerful results.</h2>
+        <p class="section-sub">Smart Search processes your files locally and makes them instantly queryable with AI.</p>
+      </div>
+      <div class="pipeline">
+        <div class="pipeline-step" data-step="1">
+          <div class="pipeline-num">01</div>
+          <div class="pipeline-icon">📂</div>
+          <h4>Index Your Files</h4>
+          <p>Choose folders to index. Smart Search crawls and reads your documents, images, videos, and audio.</p>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" data-step="2">
+          <div class="pipeline-num">02</div>
+          <div class="pipeline-icon">⚙️</div>
+          <h4>Extraction</h4>
+          <p>Content is extracted from each file — text from PDFs, frames from videos, spectrograms from audio.</p>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" data-step="3">
+          <div class="pipeline-num">03</div>
+          <div class="pipeline-icon">🧬</div>
+          <h4>Embeddings</h4>
+          <p>Google Gemini converts each chunk into a 768-dimensional semantic vector stored in FAISS.</p>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" data-step="4">
+          <div class="pipeline-num">04</div>
+          <div class="pipeline-icon">🔍</div>
+          <h4>Vector Search</h4>
+          <p>Your query is embedded and matched against your file vectors at lightning speed.</p>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step" data-step="5">
+          <div class="pipeline-num">05</div>
+          <div class="pipeline-icon">✅</div>
+          <h4>Instant Results</h4>
+          <p>Top results surface with previews, ranked by semantic similarity to your query.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── DEMO ───────────────────────────── -->
+  <section id="demo">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Demo</div>
+        <h2 class="section-title">See it in action</h2>
+        <p class="section-sub">One shortcut. Any file. Natural language.</p>
+      </div>
+      <div class="demo-steps">
+        <div class="demo-step" data-active="true">
+          <div class="demo-step-indicator">
+            <span class="demo-step-num">1</span>
+          </div>
+          <div>
+            <div class="demo-step-title">Index a folder</div>
+            <div class="demo-step-desc">Press <kbd>⌘+Shift+Space</kbd>, click 📁 and choose any folder</div>
+          </div>
+        </div>
+        <div class="demo-step">
+          <div class="demo-step-indicator">
+            <span class="demo-step-num">2</span>
+          </div>
+          <div>
+            <div class="demo-step-title">Search naturally</div>
+            <div class="demo-step-desc">Type "screenshot of meeting notes about Q4" or "photo with dog"</div>
+          </div>
+        </div>
+        <div class="demo-step">
+          <div class="demo-step-indicator">
+            <span class="demo-step-num">3</span>
+          </div>
+          <div>
+            <div class="demo-step-title">Preview instantly</div>
+            <div class="demo-step-desc">See the result before you open it with the rich preview pane</div>
+          </div>
+        </div>
+        <div class="demo-step">
+          <div class="demo-step-indicator">
+            <span class="demo-step-num">4</span>
+          </div>
+          <div>
+            <div class="demo-step-title">Open with Enter</div>
+            <div class="demo-step-desc">Press Enter to open, Cmd+R to reveal in Finder</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-window">
+        <div class="demo-window-bar">
+          <div class="dw-dot dw-r"></div><div class="dw-dot dw-y"></div><div class="dw-dot dw-g"></div>
+          <span class="dw-title">Smart Search — Live Demo</span>
+        </div>
+        <div class="demo-terminal">
+          <div class="demo-line">
+            <span class="demo-prompt">✦</span>
+            <span class="demo-query">screenshot of quarterly revenue chart</span>
+          </div>
+          <div class="demo-result-row">
+            <span class="dr-icon">▣</span>
+            <span class="dr-name">Screenshot — Feb 14</span>
+            <span class="dr-score best">Best Match</span>
+          </div>
+          <div class="demo-result-row">
+            <span class="dr-icon">📕</span>
+            <span class="dr-name">Q4_Report_2025.pdf</span>
+            <span class="dr-score strong">Strong Match</span>
+          </div>
+          <div class="demo-result-row">
+            <span class="dr-icon">≣</span>
+            <span class="dr-name">revenue_notes.docx</span>
+            <span class="dr-score possible">Possible Match</span>
+          </div>
+          <div class="demo-empty-line"></div>
+          <div class="demo-line muted">
+            <span class="demo-prompt">ask</span>
+            <span class="demo-query">what were the main findings in my Q4 reports?</span>
+          </div>
+          <div class="demo-ai-response">
+            🤖 Based on your indexed files, the Q4 2025 report shows revenue grew 23% YoY, driven primarily by the enterprise segment. Key risks noted include supply chain delays...
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── DOWNLOAD ───────────────────────────── -->
+  <section id="download">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Download</div>
+        <h2 class="section-title">Available on every platform</h2>
+        <p class="section-sub">Download the app, add your API key, and start searching in under 2 minutes.</p>
+      </div>
+      <div class="download-grid">
+
+        <div class="download-card featured">
+          <div class="download-platform-icon">🍎</div>
+          <div class="download-platform">macOS</div>
+          <div class="download-filename">SMARTSEARCH_v1_mac.dmg</div>
+          <div class="download-meta">
+            <span>Version 1.0.0</span>
+            <span>·</span>
+            <span>Apple Silicon + Intel</span>
+          </div>
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases" target="_blank" class="btn-download">
+            <span>↓</span> Download for macOS
+          </a>
+          <div class="download-note">macOS 12+ required</div>
+        </div>
+
+        <div class="download-card">
+          <div class="download-platform-icon">🪟</div>
+          <div class="download-platform">Windows</div>
+          <div class="download-filename">SMARTSEARCH_v1_windows.exe</div>
+          <div class="download-meta">
+            <span>Version 1.0.0</span>
+            <span>·</span>
+            <span>64-bit</span>
+          </div>
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases" target="_blank" class="btn-download btn-download-outline">
+            <span>↓</span> Download for Windows
+          </a>
+          <div class="download-note">Windows 10+ required</div>
+        </div>
+
+        <div class="download-card">
+          <div class="download-platform-icon">🐧</div>
+          <div class="download-platform">Linux</div>
+          <div class="download-filename">SMARTSEARCH_v1_linux.AppImage</div>
+          <div class="download-meta">
+            <span>Version 1.0.0</span>
+            <span>·</span>
+            <span>AppImage</span>
+          </div>
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases" target="_blank" class="btn-download btn-download-outline">
+            <span>↓</span> Download for Linux
+          </a>
+          <div class="download-note">Ubuntu 20.04+ / Debian</div>
+        </div>
+
+      </div>
+
+      <!-- API Key setup -->
+      <div class="api-key-section">
+        <div class="api-key-content">
+          <div class="api-key-icon">🔑</div>
+          <div>
+            <h3>You'll need a free Gemini API key</h3>
+            <p>Smart Search uses Google's Gemini embedding models for semantic search. The free tier includes 1,500 requests/day — way more than you'll need.</p>
+            <div class="api-steps">
+              <div class="api-step"><span class="api-step-n">1</span> Visit Google AI Studio</div>
+              <div class="api-step"><span class="api-step-n">2</span> Click Create API Key</div>
+              <div class="api-step"><span class="api-step-n">3</span> Copy &amp; paste during setup</div>
+            </div>
+          </div>
+        </div>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn-primary">
+          Get Free API Key ↗
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── DOCS ───────────────────────────── -->
+  <section id="docs">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Documentation</div>
+        <h2 class="section-title">Everything you need to get started</h2>
+      </div>
+      <div class="docs-grid">
+        <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/setup.md" target="_blank" class="doc-card">
+          <div class="doc-icon">📖</div>
+          <h4>Setup Guide</h4>
+          <p>Get the API key, install the app, and index your first folder in minutes.</p>
+          <span class="doc-link">Read guide →</span>
+        </a>
+        <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/usage.md" target="_blank" class="doc-card">
+          <div class="doc-icon">⌨️</div>
+          <h4>Usage Guide</h4>
+          <p>Learn semantic search, AI ask mode, filters, keyboard shortcuts, and more.</p>
+          <span class="doc-link">Read guide →</span>
+        </a>
+        <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/faq.md" target="_blank" class="doc-card">
+          <div class="doc-icon">❓</div>
+          <h4>FAQ</h4>
+          <p>Privacy, supported file types, costs, indexing speed — all answered.</p>
+          <span class="doc-link">Read guide →</span>
+        </a>
+      </div>
+
+      <!-- Keyboard Shortcuts -->
+      <div class="shortcuts-section">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-grid">
+          <div class="shortcut-item"><kbd>⌘ Shift Space</kbd><span>Open Smart Search</span></div>
+          <div class="shortcut-item"><kbd>↑ ↓</kbd><span>Navigate results</span></div>
+          <div class="shortcut-item"><kbd>Enter</kbd><span>Open file</span></div>
+          <div class="shortcut-item"><kbd>Space</kbd><span>Preview file</span></div>
+          <div class="shortcut-item"><kbd>⌘ R</kbd><span>Reveal in Finder</span></div>
+          <div class="shortcut-item"><kbd>Esc</kbd><span>Close launcher</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── GITHUB ───────────────────────────── -->
+  <section id="github">
+    <div class="container">
+      <div class="github-banner">
+        <div class="github-left">
+          <div class="github-icon">⭐</div>
+          <div>
+            <h3>Open Source &amp; Free Forever</h3>
+            <p>Smart Search is MIT licensed. Contribute, fork, or just star the repo to support the project.</p>
+          </div>
+        </div>
+        <div class="github-actions">
+          <a href="https://github.com/deepanmpc/SMART-SEARCH" target="_blank" class="btn-primary">View Repository</a>
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/issues" target="_blank" class="btn-outline">Report Issue</a>
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/pulls" target="_blank" class="btn-outline">Contribute</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── CREATOR ───────────────────────────── -->
+  <section id="creator">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Creator</div>
+        <h2 class="section-title">Built by a human who lost too many files</h2>
+      </div>
+      <div class="creator-card">
+        <div class="creator-avatar">
+          <div class="creator-avatar-inner">DC</div>
+        </div>
+        <div class="creator-info">
+          <h3 class="creator-name">Deepan Chandrasekaran</h3>
+          <p class="creator-title">AI Engineer &amp; Builder</p>
+          <p class="creator-bio">
+            Building tools for intelligent computing. Smart Search started as a personal frustration — having thousands of screenshots, notes, and files that were impossible to find. Gemini's multimodal embeddings made it finally possible to build something that truly understands your files.
+          </p>
+          <div class="creator-links">
+            <a href="https://github.com/deepanmpc" target="_blank" class="creator-link">
+              <span>⊛</span> GitHub
+            </a>
+            <a href="https://linkedin.com/in/deepanmpc" target="_blank" class="creator-link">
+              <span>in</span> LinkedIn
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── FOOTER ───────────────────────────── -->
+  <footer id="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#" class="nav-logo">
+            <span class="logo-icon">✦</span>
+            <span class="logo-text">Smart Search</span>
+          </a>
+          <p>AI-powered local search engine.<br>Free. Open Source. Privacy First.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <div class="footer-col-title">Product</div>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#download">Download</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Resources</div>
+            <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/setup.md" target="_blank">Setup Guide</a>
+            <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/usage.md" target="_blank">Usage Guide</a>
+            <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/faq.md" target="_blank">FAQ</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Links</div>
+            <a href="https://github.com/deepanmpc/SMART-SEARCH" target="_blank">GitHub</a>
+            <a href="https://github.com/deepanmpc/SMART-SEARCH/releases" target="_blank">Releases</a>
+            <a href="https://github.com/deepanmpc/SMART-SEARCH/issues" target="_blank">Report Issue</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Smart Search. MIT License. Built by <a href="https://github.com/deepanmpc" target="_blank">Deepan Chandrasekaran</a>.</p>
+        <p class="footer-sub">Host on <a href="https://pages.github.com" target="_blank">GitHub Pages</a> · deepanmpc.github.io/smart-search</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
