@@ -100,6 +100,21 @@ Smart Search was built with privacy as a core principle:
 
 ---
 
+##  macOS Security Note
+
+If you download the `.dmg` and see a message saying **"SMART SEARCH is damaged and can't be opened"**, this is a standard macOS security feature (Gatekeeper) for unsigned applications.
+
+### 🛠️ How to fix:
+1.  Open **Terminal** on your Mac.
+2.  Run this command:
+    ```bash
+    sudo xattr -rd com.apple.quarantine /Applications/SMART\ SEARCH.app
+    ```
+3.  Enter your password and hit Enter.
+4.  Open the app! It will work perfectly.
+
+---
+
 ## 🛠️ Development
 
 ```bash
