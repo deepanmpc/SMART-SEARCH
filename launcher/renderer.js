@@ -31,7 +31,7 @@ let currentResults = [];
 let selectedIndex = -1;
 
 const PLACEHOLDERS = {
-    all: '✦ Applications',
+    all: '✦ smart_search magic',
     text: '≣ Search docs',
     image: '▣ Search pics',
     video: '🎞️ Search video',
@@ -43,18 +43,31 @@ async function fetchStats() {
     try {
         const res = await fetch(`${API_URL}/stats`);
         const data = await res.json();
-        planText.textContent = `Memory Usage`;
         
+        // Show Index Capacity as the primary "Increasing" data
+        const totalChunks = data.total_chunks || 0;
+        const chunkLimit = data.plan_limit || 50000;
+        const indexPercent = Math.min((totalChunks / chunkLimit) * 100, 100);
+        
+        planText.textContent = `Index Status: ${totalChunks.toLocaleString()} / ${chunkLimit.toLocaleString()} chunks`;
+        progressBar.style.width = `${indexPercent}%`;
+        
+        // Show RAM Usage as secondary info
         const usageMb = data.ram_usage_mb || 0;
-        const limitMb = data.ram_limit_mb || 500;
-        const percent = Math.min((usageMb / limitMb) * 100, 100);
+        usageText.textContent = `System RAM: ${Math.round(usageMb)} MB`;
         
-        progressBar.style.width = `${percent}%`;
-        if (percent > 90) progressBar.style.background = 'linear-gradient(90deg, #ff416c, #ff4b2b)';
-        usageText.textContent = `${Math.round(usageMb)} MB / ${limitMb} MB`;
+        if (indexPercent > 90) progressBar.style.background = 'linear-gradient(90deg, #ff416c, #ff4b2b)';
+        else progressBar.style.background = 'linear-gradient(90deg, #007aff, #5ac8fa)';
 
-        // Show Setup Wizard only if index is empty
-        if (data.total_chunks === 0) {
+        // AUTO-SHOW INDEXING: Check backend status
+        const statusRes = await fetch(`${API_URL}/index/status`);
+        const statusData = await statusRes.json();
+        if (statusData.is_indexing && !progressPollingInterval) {
+            startPollingProgress();
+        }
+
+        // Show Setup Wizard only if index is empty AND not indexing
+        if (data.total_chunks === 0 && !statusData.is_indexing) {
             setupWizard.classList.remove('hidden');
         } else {
             setupWizard.classList.add('hidden');
@@ -66,6 +79,8 @@ async function fetchStats() {
 }
 
 fetchStats();
+// Periodically refresh stats to keep UI sync'd
+setInterval(fetchStats, 10000);
 
 if (setupStartBtn) {
     setupStartBtn.onclick = async () => {
@@ -214,7 +229,7 @@ function displayResults(results) {
     updateWindowSize();
 }
 
-function selectResult(index) {
+async function selectResult(index) {
     if (index < 0 || index >= currentResults.length) return;
     
     if (selectedIndex >= 0) {
@@ -249,6 +264,7 @@ function selectResult(index) {
         mediaHtml = `<audio src="file://${res.file_path}" controls autoplay style="width: 180px; border-radius: 20px;"></audio>`;
     }
     
+    // Initial display
     resultPreview.innerHTML = `
         <div class="interactive-preview" style="width: auto;" onclick="ipcRenderer.send('open-file', '${res.file_path}')">
             ${mediaHtml}
@@ -256,9 +272,27 @@ function selectResult(index) {
         <div class="preview-content">
             <div class="preview-meta">${semanticScore} • ${friendlyType}</div>
             <div class="preview-title clickable-title" onclick="ipcRenderer.send('open-file', '${res.file_path}')">${displayName}</div>
-            ${snippet ? `<div class="preview-snippet">${snippet}</div>` : ''}
+            <div id="enhancedPreview" class="preview-snippet">${snippet || 'Loading preview...'}</div>
         </div>
     `;
+
+    // Fetch enhanced preview
+    try {
+        const pRes = await fetch(`${API_URL}/preview`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_path: res.file_path })
+        });
+        const pData = await pRes.json();
+        const enhancedEl = document.getElementById('enhancedPreview');
+        if (enhancedEl && pData.content) {
+            enhancedEl.innerHTML = `<pre style="white-space: pre-wrap; font-size: 11px; font-family: 'SF Mono', monospace; opacity: 0.9;">${pData.content}</pre>`;
+            const metaEl = document.querySelector('.preview-meta');
+            if (metaEl) metaEl.innerText = `${semanticScore} • ${friendlyType} • ${pData.size_mb} MB`;
+        }
+    } catch (e) {
+        console.error("Preview fetch error", e);
+    }
 }
 
 function displayAnswer(answer) {
@@ -417,9 +451,15 @@ async function startIndexing(paths) {
         });
         const data = await res.json();
         if (res.ok && data.success) {
+            console.log("Indexing started successfully");
             startPollingProgress();
         } else {
-            alert(`Indexing failed: ${data.message || data.detail}`);
+            // If already in progress, just show the UI
+            if (data.message && data.message.includes("already in progress")) {
+                startPollingProgress();
+            } else {
+                alert(`Indexing failed: ${data.message || data.detail}`);
+            }
         }
     } catch (e) {
         alert('❌ Index API error.');
@@ -492,7 +532,7 @@ function setActiveFilter(type) {
     filterChips.forEach(c => {
         c.classList.toggle('active', c.getAttribute('data-type') === type);
     });
-    searchInput.placeholder = PLACEHOLDERS[type] || 'Applications';
+    searchInput.placeholder = PLACEHOLDERS[type] || 'smart_search magic';
     
     const val = searchInput.value.trim();
     if (val) handleCommand(val);

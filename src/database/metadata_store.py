@@ -23,8 +23,25 @@ def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
             chunk_text TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS folders (
+            path TEXT PRIMARY KEY
+        )
+    """)
     conn.commit()
     return conn
+
+def add_watched_folder(conn, folder_path: str):
+    conn.execute("INSERT OR IGNORE INTO folders (path) VALUES (?)", (folder_path,))
+    conn.commit()
+
+def remove_watched_folder(conn, folder_path: str):
+    conn.execute("DELETE FROM folders WHERE path = ?", (folder_path,))
+    conn.commit()
+
+def get_all_watched_folders(conn) -> List[str]:
+    rows = conn.execute("SELECT path FROM folders").fetchall()
+    return [row["path"] for row in rows]
 
 
 def insert_chunk(conn, vector_id: int, file_id: str, file_meta: dict, chunk_index: int, chunk_text: str = ""):
@@ -46,6 +63,10 @@ def get_by_vector_ids(conn, vector_ids: List[int]) -> List[Dict[str, Any]]:
     ).fetchall()
     return [dict(row) for row in rows]
 
+
+def get_all_chunks(conn) -> List[Dict[str, Any]]:
+    rows = conn.execute("SELECT vector_id, chunk_text, document_path FROM chunks").fetchall()
+    return [dict(row) for row in rows]
 
 def clear_document(conn, document_path: str):
     conn.execute("DELETE FROM chunks WHERE document_path = ?", (document_path,))

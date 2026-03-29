@@ -21,7 +21,7 @@
     <div class="top-row">
       <div class="search-bar">
         <span class="search-icon" id="searchIcon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Search files or ask AI..." autofocus autocomplete="off" spellcheck="false">
+        <input type="text" id="searchInput" placeholder="smart_search magic" autofocus autocomplete="off" spellcheck="false">
       </div>
       <div class="filter-dock">
           <div class="filter-chip active" data-type="all" title="All Files">✦</div>
@@ -65,12 +65,12 @@
     
     <!-- Status Footer Pill -->
     <div class="footer">
-      <div style="display: flex; align-items: center;">
-        <span id="planText" style="font-weight: 500;">Memory Usage</span>
-        <div class="progress-bar-container">
+      <div style="display: flex; align-items: center; flex: 1;">
+        <span id="planText" style="font-weight: 500; min-width: 180px;">Index Status</span>
+        <div class="progress-bar-container" style="flex: 1; max-width: 200px;">
           <div class="progress-bar" id="progressBar" style="width: 0%"></div>
         </div>
-        <span id="usageText">0%</span>
+        <span id="usageText" style="margin-left: 15px; font-weight: 600; color: var(--accent);">0 MB</span>
       </div>
       <button id="clearIndexBtn">🗑️ Clear All</button>
     </div>
