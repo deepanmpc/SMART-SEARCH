@@ -96,7 +96,8 @@ body {
     -webkit-app-region: drag;
 }
 
-#searchInput, .filter-dock, .filter-chip, #indexFolderBtn, #resultsContainer, .footer, #clearIndexBtn {
+#searchInput, .filter-dock, .filter-chip, #indexFolderBtn, #resultsContainer, .footer, #clearIndexBtn,
+#setupWizard, .wizard-card, .wizard-step, .input-group, button, input {
     -webkit-app-region: no-drag; /* EXCLUDE INTERACTIVE ELEMENTS */
 }
 

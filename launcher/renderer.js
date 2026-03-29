@@ -51,12 +51,35 @@ const PLACEHOLDERS = {
 };
 
 // Fetch stats on load
+async function checkOnboarding() {
+    try {
+        const config = await ipcRenderer.invoke('get-config');
+        const hasKey = !!config.google_api_key;
+
+        // If key is missing, show wizard Step 2 immediately
+        if (!hasKey) {
+            setupWizard.classList.remove('hidden');
+            showStep(2);
+            updateWindowSize();
+            return true; // Still onboarding
+        }
+        
+        // If we have a key, we can try to fetch stats
+        return false; 
+    } catch (e) {
+        console.error('Failed to check onboarding', e);
+        return false;
+    }
+}
+
 async function fetchStats() {
     try {
         const config = await ipcRenderer.invoke('get-config');
         const hasKey = !!config.google_api_key;
 
         const res = await fetch(`${API_URL}/stats`);
+        if (!res.ok) throw new Error('Backend not ready');
+        
         const data = await res.json();
         
         // Show Index Capacity as the primary "Increasing" data
@@ -81,17 +104,20 @@ async function fetchStats() {
             startPollingProgress();
         }
 
-        // Show Setup Wizard only if index is empty AND not indexing OR if key is missing
-        if ((data.total_chunks === 0 && !statusData.is_indexing) || !hasKey) {
-            setupWizard.classList.remove('hidden');
-            if (!hasKey) showStep(2); // Jump to API key if that's all that's missing
-            else if (data.total_chunks === 0) showStep(1);
-        } else {
-            setupWizard.classList.add('hidden');
+        // Only hide/show based on stats if we ALREADY HAVE A KEY
+        if (hasKey) {
+            if (data.total_chunks === 0 && !statusData.is_indexing) {
+                setupWizard.classList.remove('hidden');
+                showStep(1);
+            } else {
+                setupWizard.classList.add('hidden');
+            }
         }
         updateWindowSize();
     } catch (e) {
-        console.error('Failed to fetch stats', e);
+        // If backend fails but we have no key, checkOnboarding already handled it.
+        // If backend fails but we HAVE a key, just log and wait for next poll.
+        console.log('Backend not ready yet, retrying soon...');
     }
 }
 
@@ -99,6 +125,7 @@ function showStep(num) {
     [step1, step2, step3].forEach((s, i) => {
         s.classList.toggle('hidden', i + 1 !== num);
     });
+    updateWindowSize();
 }
 
 // Wizard Event Listeners
@@ -161,10 +188,10 @@ function updateWindowSize() {
     setTimeout(() => {
         const width = 900;
         const container = document.querySelector('.launcher-container');
-        // Standard padding for macOS shadows and floating effect
-        const height = container.scrollHeight + 100; 
+        // Ensure we capture the full scroll height plus some buffer for the shadow
+        const height = Math.max(container.scrollHeight + 40, 180); 
         ipcRenderer.send('resize-window', width, height);
-    }, 50);
+    }, 10);
 }
 
 function showLoading() {
@@ -706,7 +733,26 @@ searchInput.addEventListener('keydown', (e) => {
     }
 });
 
+async function init() {
+    console.log('Smart Search Renderer Initializing...');
+    const onboarding = await checkOnboarding();
+    if (!onboarding) {
+        fetchStats();
+    }
+}
+
+// Start polling for stats periodically if not onboarding
+setInterval(() => {
+    const isWizardVisible = !setupWizard.classList.contains('hidden');
+    if (!isWizardVisible) fetchStats();
+}, 5000);
+
+// Initialize on load
+init();
+
 window.addEventListener('focus', () => {
     searchInput.focus();
-    fetchStats();
+    checkOnboarding().then(onboarding => {
+        if (!onboarding) fetchStats();
+    });
 });
