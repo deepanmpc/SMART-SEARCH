@@ -1,5 +1,5 @@
 {
-  "name": "smart-search-launcher",
+  "name": "smart-search",
   "version": "1.0.0",
   "description": "Spotlight-style AI Launcher for SMART SEARCH",
   "main": "main.js",
@@ -17,17 +17,20 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.deepan.smartsearch",
-    "productName": "Smart Search",
+    "appId": "ai.smartsearch.app",
+    "productName": "SMART SEARCH",
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "artifactName": "SMARTSEARCH_mac.${ext}"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "SMARTSEARCH_windows.${ext}"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "artifactName": "SMARTSEARCH_linux.${ext}"
     },
     "extraResources": [
       {

@@ -15,7 +15,7 @@ fi
 
 echo "1. Building Python Backend with PyInstaller..."
 # We output the executable into launcher/backend so electron-builder can bundle it
-pyinstaller src/api.py --onefile --distpath launcher/backend --log-level WARN
+pyinstaller src/api.py --onefile --distpath launcher/backend --name api --log-level WARN
 
 echo "2. Installing Launcher Dependencies..."
 cd launcher
