@@ -1,6 +1,7 @@
 <div align="center">
 
-# ✦ SMART SEARCH
+# ✦ SEARCH WIZARD
+
 
 ### AI Spotlight for your computer.
 
