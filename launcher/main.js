@@ -40,6 +40,7 @@ function startBackend() {
   
   if (config.google_api_key) {
     env.GOOGLE_API_KEY = config.google_api_key;
+    env.GEMINI_API_KEY = config.google_api_key;
     log.info('Using Gemini API Key from config.');
   }
 

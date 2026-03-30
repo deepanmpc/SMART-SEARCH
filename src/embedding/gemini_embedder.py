@@ -27,7 +27,8 @@ DEFAULT_DIMENSION = 768
 def _get_client():
     global _client
     if _client is None:
-        _client = genai.Client()
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        _client = genai.Client(api_key=api_key)
     return _client
 
 
