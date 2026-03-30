@@ -1,7 +1,7 @@
 {
-  "name": "smart-search",
-  "version": "26.0.1",
-  "description": "Spotlight-style AI Launcher for SMART SEARCH",
+  "name": "search-wizard",
+  "version": "26.1.1",
+  "description": "Spotlight-style Launcher for SEARCH WIZARD",
   "main": "main.js",
   "author": "Deepan Chandrasekaran",
   "repository": {
@@ -21,8 +21,8 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "ai.smartsearch.app",
-    "productName": "SMART SEARCH",
+    "appId": "com.searchwizard.app",
+    "productName": "SEARCH WIZARD",
     "publish": {
       "provider": "github",
       "owner": "deepanmpc",
@@ -31,15 +31,15 @@
     "mac": {
       "target": "dmg",
       "category": "public.app-category.utilities",
-      "artifactName": "SMARTSEARCH_mac.${ext}"
+      "artifactName": "SEARCHWIZARD_mac.${ext}"
     },
     "win": {
       "target": "nsis",
-      "artifactName": "SMARTSEARCH_windows.${ext}"
+      "artifactName": "SEARCHWIZARD_windows.${ext}"
     },
     "linux": {
       "target": "AppImage",
-      "artifactName": "SMARTSEARCH_linux.${ext}"
+      "artifactName": "SEARCHWIZARD_linux.${ext}"
     },
     "extraResources": [
       {

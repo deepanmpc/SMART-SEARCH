@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search Wizard — AI Spotlight For Your Computer</title>
-  <meta name="description" content="Search images, videos, audio, and documents using natural language. Search Wizard is an AI-powered local search engine that runs entirely on your machine.">
-  <meta property="og:title" content="Search Wizard — AI Spotlight For Your Computer">
-  <meta property="og:description" content="Search your entire computer with the power of Google Gemini. Privacy-first, blazing fast.">
+  <title>Search Wizard — Spotlight For Your Computer</title>
+  <meta name="description" content="Search images, videos, audio, and documents using natural language. Search Wizard is a local search engine that runs entirely on your machine. It's not AI, it's pure math with magic.">
+  <meta property="og:title" content="Search Wizard — Spotlight For Your Computer">
+  <meta property="og:description" content="Search your entire computer with the power of pure math. Privacy-first, blazing fast.">
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,9 +53,9 @@
       <div class="orb orb-3"></div>
       <div class="grid-overlay"></div>
     </div>
-    <div class="hero-content">
-      <div class="hero-logo-wrap" style="margin-bottom: 24px;">
-        <img src="assets/icon.png" alt="Search Wizard" style="width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);">
+    <div class="hero-content" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+      <div class="hero-logo-wrap" style="margin-bottom: 32px; display: flex; justify-content: center; width: 100%;">
+        <img src="assets/icon.png" alt="Search Wizard" style="width: 100px; height: 100px; border-radius: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.15);">
       </div>
       <div class="hero-badge">
         <span class="badge-dot"></span>
@@ -70,10 +70,10 @@
         It's not AI, it's completely AI-free. Just pure math with <span class="gradient-text" style="font-weight: bold; font-size: 1.1em;">magic ✨</span>.
       </p>
       <div class="hero-ctas">
-        <a href="#download" class="btn-primary">
+        <a href="#download" class="btn-primary" onclick="setTimeout(() => window.open('https://github.com/deepanmpc/SMART-SEARCH', '_blank'), 1000)">
           <span>↓</span> Download Free
         </a>
-        <a href="https://github.com/deepanmpc/SMART-SEARCH" target="_blank" class="btn-outline">
+        <a href="https://github.com/deepanmpc/SMART-SEARCH" target="_blank" class="btn-outline" onclick="window.open('https://github.com/deepanmpc/SMART-SEARCH', '_blank'); return false;">
           <span>⭐</span> View on GitHub
         </a>
       </div>
@@ -88,7 +88,7 @@
         </div>
         <div class="mockup-search-row">
           <span class="mockup-icon">✦</span>
-          <span class="mockup-typing" id="typingText">photo of sunset at beach</span>
+          <span class="mockup-typing" id="typingText">photo of a person wearing blue coolers</span>
           <span class="mockup-cursor">|</span>
         </div>
         <div class="mockup-filters">
@@ -102,15 +102,15 @@
           <div class="mockup-result selected">
             <span class="mr-icon">▣</span>
             <div class="mr-info">
-              <div class="mr-name">Photo — Jun 12</div>
-              <div class="mr-snippet">Sunset beach photo from trip</div>
+              <div class="mr-name">Photo — Summer Trip</div>
+              <div class="mr-snippet">Beach photo with sunglasses</div>
             </div>
             <span class="mr-badge">Best Match</span>
           </div>
           <div class="mockup-result">
             <span class="mr-icon">🎞️</span>
             <div class="mr-info">
-              <div class="mr-name">beach_clip.mp4</div>
+              <div class="mr-name">beach_vlog.mp4</div>
               <div class="mr-snippet">Video · 42 MB</div>
             </div>
             <span class="mr-badge">Strong Match</span>
@@ -118,18 +118,18 @@
           <div class="mockup-result">
             <span class="mr-icon">▣</span>
             <div class="mr-info">
-              <div class="mr-name">Screenshot — Aug 5</div>
-              <div class="mr-snippet">Similar landscape image</div>
+              <div class="mr-name">IMG_4821.jpg</div>
+              <div class="mr-snippet">Similar visual content</div>
             </div>
             <span class="mr-badge">Possible Match</span>
           </div>
         </div>
         <div class="mockup-preview">
-          <div class="preview-thumb">🌅</div>
+          <div class="preview-thumb">😎</div>
           <div class="preview-details">
-            <div class="preview-title">Photo — Jun 12</div>
+            <div class="preview-title">Photo — Summer Trip</div>
             <div class="preview-meta">Best Match · Image · 3.2 MB</div>
-            <div class="preview-path">/Users/deepan/Photos/beach/sunset.jpg</div>
+            <div class="preview-path">/Users/deepan/Photos/trips/beach.jpg</div>
           </div>
         </div>
         <div class="mockup-footer">
@@ -185,16 +185,20 @@
 
         <div class="feature-card feature-large">
           <div class="feature-icon-wrap">
-            <div class="feature-icon">🧠</div>
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path><path d="M21 21l-6 -6"></path><path d="M10 13v.01"></path><path d="M10 7v3"></path></svg>
+            </div>
           </div>
-          <h3>AI Semantic Search</h3>
-          <p>Search your files by meaning instead of filenames. Ask "photo of my dog at a park" and find it instantly — even if it's named IMG_4821.jpg.</p>
+          <h3>Semantic Search</h3>
+          <p>Search your files by meaning instead of filenames. Ask "photo of a person wearing blue coolers" and find it instantly.</p>
           <div class="feature-tag">Powered by Gemini Embeddings</div>
         </div>
 
         <div class="feature-card">
           <div class="feature-icon-wrap">
-            <div class="feature-icon">🎨</div>
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
           </div>
           <h3>Multimodal Search</h3>
           <p>Search across images, videos, audio, PDFs, Word docs, code files — all in one place.</p>
@@ -202,7 +206,9 @@
 
         <div class="feature-card">
           <div class="feature-icon-wrap">
-            <div class="feature-icon">⚡</div>
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </div>
           </div>
           <h3>Real-Time Indexing</h3>
           <p>Files become searchable automatically. Add a document, it's in your search results within seconds.</p>
@@ -210,7 +216,9 @@
 
         <div class="feature-card">
           <div class="feature-icon-wrap">
-            <div class="feature-icon">👁️</div>
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </div>
           </div>
           <h3>Instant Preview</h3>
           <p>See image thumbnails, video previews, and text snippets before opening a single file.</p>
@@ -218,7 +226,9 @@
 
         <div class="feature-card">
           <div class="feature-icon-wrap">
-            <div class="feature-icon">🔒</div>
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
           </div>
           <h3>Privacy First</h3>
           <p>Everything runs locally on your machine. Your files never leave your computer. Only embeddings are computed remotely.</p>
@@ -226,10 +236,12 @@
 
         <div class="feature-card">
           <div class="feature-icon-wrap">
-            <div class="feature-icon">🤖</div>
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M12 8l0 4l2 2"></path></svg>
+            </div>
           </div>
-          <h3>AI Ask Mode</h3>
-          <p>Ask questions about your files. "What do my PDFs say about transformers?" — get an AI-generated answer from your own content.</p>
+          <h3>Wizard Mode</h3>
+          <p>Ask questions about your files. "What do my PDFs say about transformers?" — get an answer from your own content.</p>
         </div>
 
       </div>
@@ -242,7 +254,7 @@
       <div class="section-header">
         <div class="section-tag">How It Works</div>
         <h2 class="section-title">Simple pipeline. Powerful results.</h2>
-        <p class="section-sub">Search Wizard processes your files locally and makes them instantly queryable with AI.</p>
+        <p class="section-sub">Search Wizard processes your files locally and makes them instantly queryable.</p>
       </div>
       <div class="pipeline">
         <div class="pipeline-step" data-step="1">
@@ -307,7 +319,7 @@
           </div>
           <div>
             <div class="demo-step-title">Search naturally</div>
-            <div class="demo-step-desc">Type "screenshot of meeting notes about Q4" or "photo with dog"</div>
+            <div class="demo-step-desc">Type "photo of a person wearing blue coolers" or "a music that sounds like a lions roar"</div>
           </div>
         </div>
         <div class="demo-step">
@@ -338,30 +350,30 @@
         <div class="demo-terminal">
           <div class="demo-line">
             <span class="demo-prompt">✦</span>
-            <span class="demo-query">screenshot of quarterly revenue chart</span>
+            <span class="demo-query">photo of a person wearing blue coolers</span>
           </div>
           <div class="demo-result-row">
             <span class="dr-icon">▣</span>
-            <span class="dr-name">Screenshot — Feb 14</span>
+            <span class="dr-name">Photo — Summer Trip 2025</span>
             <span class="dr-score best">Best Match</span>
           </div>
           <div class="demo-result-row">
-            <span class="dr-icon">📕</span>
-            <span class="dr-name">Q4_Report_2025.pdf</span>
+            <span class="dr-icon">▣</span>
+            <span class="dr-name">IMG_4821.jpg</span>
             <span class="dr-score strong">Strong Match</span>
           </div>
           <div class="demo-result-row">
-            <span class="dr-icon">≣</span>
-            <span class="dr-name">revenue_notes.docx</span>
+            <span class="dr-icon">🎞️</span>
+            <span class="dr-name">Beach_Vlog.mp4</span>
             <span class="dr-score possible">Possible Match</span>
           </div>
           <div class="demo-empty-line"></div>
           <div class="demo-line muted">
             <span class="demo-prompt">ask</span>
-            <span class="demo-query">what were the main findings in my Q4 reports?</span>
+            <span class="demo-query">where was this photo taken?</span>
           </div>
           <div class="demo-ai-response">
-            🤖 Based on your indexed files, the Q4 2025 report shows revenue grew 23% YoY, driven primarily by the enterprise segment. Key risks noted include supply chain delays...
+            🤖 Based on the metadata and visual landmarks in the image, this photo appears to have been taken near the coastal promenade during your trip.
           </div>
         </div>
       </div>
@@ -428,15 +440,17 @@
       <div class="download-grid">
 
         <div class="download-card featured">
-          <div class="download-platform-icon">🍎</div>
+          <div class="download-platform-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M17.057 12.781c.032 2.588 2.254 3.462 2.285 3.476-.019.065-.35 1.15-1.121 2.227-.666.931-1.353 1.852-2.39 1.871-1.018.019-1.347-.585-2.51-.585-1.161 0-1.528.567-2.483.604-1.001.036-1.785-.989-2.457-1.939-1.374-1.947-2.427-5.506-1.012-7.859.702-1.166 1.956-1.906 3.303-1.925 1.026-.019 1.996.657 2.623.657.628 0 1.822-.843 3.033-.729 1.077.045 1.898.537 2.441 1.284-1.11.636-1.84 1.446-1.812 2.813m-2.433-6.68c.531-.613.89-1.463.791-2.311-.774.032-1.708.497-2.264 1.111-.497.551-.931 1.417-.812 2.246.865.065 1.748-.426 2.285-1.046z"/></svg>
+          </div>
           <div class="download-platform">macOS</div>
-          <div class="download-filename">SMARTSEARCH_v1_mac.dmg</div>
+          <div class="download-filename">SEARCHWIZARD_mac.dmg</div>
           <div class="download-meta">
-            <span>Version 26.0.1</span>
+            <span>Version 26.1.1</span>
             <span>·</span>
             <span>Apple Silicon + Intel</span>
           </div>
-          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases/latest/download/SMARTSEARCH_mac.dmg" class="btn-download" download onclick="setTimeout(() => window.open('https://github.com/deepanmpc/SMART-SEARCH', '_blank'), 500)">
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases/latest/download/SEARCHWIZARD_mac.dmg" class="btn-download" download onclick="setTimeout(() => window.open('https://github.com/deepanmpc/SMART-SEARCH', '_blank'), 500)">
             <span>↓</span> Download for macOS
           </a>
           <div style="margin-top: 16px; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 8px; padding: 12px; text-align: left;">
@@ -447,8 +461,8 @@
             <p style="font-size: 11px; opacity: 0.9; color: #ffcccc; margin-bottom: 8px; line-height: 1.4;">
               Because the app is unsigned, macOS will say it is "damaged". You <b>must</b> run this command in your Terminal after dragging the app to Applications:
             </p>
-            <div style="background: rgba(0,0,0,0.5); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #a5d6ff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="navigator.clipboard.writeText('xattr -cr /Applications/SMART\\ SEARCH.app'); const el = this.querySelector('.copy-text'); el.innerText='Copied!'; setTimeout(()=>el.innerText='Copy', 2000);">
-              <code style="word-break: break-all;">xattr -cr /Applications/SMART\ SEARCH.app</code>
+            <div style="background: rgba(0,0,0,0.5); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #a5d6ff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="navigator.clipboard.writeText('xattr -cr /Applications/SEARCH\\ WIZARD.app'); const el = this.querySelector('.copy-text'); el.innerText='Copied!'; setTimeout(()=>el.innerText='Copy', 2000);">
+              <code style="word-break: break-all;">xattr -cr /Applications/SEARCH\ WIZARD.app</code>
               <span class="copy-text" style="opacity: 0.7; padding-left: 8px; font-family: sans-serif; font-size: 10px;">Copy</span>
             </div>
           </div>
@@ -456,30 +470,34 @@
         </div>
 
         <div class="download-card">
-          <div class="download-platform-icon">🪟</div>
+          <div class="download-platform-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1V11.4H0V3.449zm0 8.851h9.75v9.3L0 20.250V12.3zm10.65-10.5L24 0v11.4h-13.35V1.8zm0 10.5H24V24l-13.35-1.8V12.3z"/></svg>
+          </div>
           <div class="download-platform">Windows</div>
-          <div class="download-filename">SMARTSEARCH_v1_windows.exe</div>
+          <div class="download-filename">SEARCHWIZARD_windows.exe</div>
           <div class="download-meta">
-            <span>Version 26.0.1</span>
+            <span>Version 26.1.1</span>
             <span>·</span>
             <span>64-bit</span>
           </div>
-          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases/latest/download/SMARTSEARCH_windows.exe" class="btn-download" download>
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases/latest/download/SEARCHWIZARD_windows.exe" class="btn-download" download onclick="setTimeout(() => window.open('https://github.com/deepanmpc/SMART-SEARCH', '_blank'), 500)">
             <span>↓</span> Download for Windows
           </a>
           <div class="download-note">Windows 10+ required</div>
         </div>
 
         <div class="download-card">
-          <div class="download-platform-icon">🐧</div>
+          <div class="download-platform-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-2.35 0-4.46.7-6 1.82-.4.3-.77.64-1.11 1.01C4.31 3.48 4 4.21 4 5c0 .54.14 1.04.38 1.48.06.11.12.21.2.31C4.9 7.23 5.4 7.66 6 7.89c.35.13.73.21 1.13.21 1.47 0 2.72-.94 3.18-2.25.13-.37.2-.76.2-1.17 0-1.84-1.3-3.38-3.05-3.65.17-.02.35-.03.54-.03.95 0 1.82.35 2.5 1.14.3.36.54.79.7 1.27.16.48.24.99.24 1.51 0 .61-.11 1.2-.32 1.74-.21.54-.53 1.02-.93 1.42s-.88.72-1.42.93c-.54.21-1.13.32-1.74.32-.52 0-1.03-.08-1.51-.24-.48-.16-.91-.4-1.27-.7-.79-.68-1.14-1.55-1.14-2.5 0-.19.01-.37.03-.54.27 1.75 1.81 3.05 3.65 3.05.41 0 .8-.07 1.17-.2 1.31-.46 2.25-1.71 2.25-3.18 0-.4-.08-.78-.21-1.13-.23-.6-.66-1.1-1.21-1.42-.1-.08-.2-.14-.31-.2-.44-.24-.94-.38-1.48-.38-.79 0-1.52.31-2.17.89-.37.34-.71.71-1.01 1.11-.37.34-.71.71-1.01 1.11C.7 7.54 0 9.65 0 12c0 1.95.5 3.77 1.38 5.34.05.1.1.19.16.29.35.58.78 1.11 1.28 1.57.17.15.35.29.54.42 1.31.95 2.92 1.58 4.67 1.81 2.14.28 4.3.06 6.32-.61 1.3-.43 2.5-.1 3.52.5.42.25.84.58 1.26 1 .2.2.42.4.65.6.58.53 1.24 1.01 1.93 1.38.7.37 1.45.62 2.25.75 1.63.26 3.3.01 4.79-.7.42-.2.83-.43 1.22-.7 1.05-.73 1.85-1.76 2.3-2.95.45-1.19.55-2.48.3-3.75-.25-1.27-.85-2.42-1.72-3.34-.87-.92-2-1.55-3.23-1.81-1.23-.26-2.52-.16-3.71.29-1.19.45-2.22 1.25-2.95 2.3-.27.39-.5.8-.7 1.22-.71 1.49-.96 3.16-.7 4.79.13.8.38 1.55.75 2.25.37.69.85 1.35 1.38 1.93.2.23.4.45.6.65.42.42.75.84 1 1.26.6.99.93 2.22.5 3.52-.67 2.02-.89 4.18-.61 6.32.23 1.75.86 3.36 1.81 4.67.13.19.27.37.42.54.46.5 1.28.93 1.57 1.28.1.06.19.11.29.16 1.57.88 3.39 1.38 5.34 1.38 2.35 0 4.46-.7 6-1.82.37-.3.71-.64 1.01-1.11.3-.4.64-.77 1.11-1.01.58-.65.89-1.38.89-2.17 0-.54-.14-1.04-.38-1.48-.06-.11-.12-.21-.2-.31-.32-.55-.82-.98-1.42-1.21-.35-.13-.73-.21-1.13-.21-1.47 0-2.72.94-3.18 2.25-.13.37-.2.76-.2 1.17 0 1.84 1.3 3.38 3.05 3.65.17.02.35.03.54.03.95 0 1.82-.35 2.5-1.14.3-.36.54-.79.7-1.27.16-.48.24-.99.24-1.51 0-.61-.11-1.2-.32-1.74-.21-.54-.53-1.02-.93-1.42-.4-.4-.88-.72-1.42-.93-.54-.21-1.13-.32-1.74-.32-.52 0-1.03.08-1.51.24-.48.16-.91.4-1.27.7-.79.68-1.14 1.55-1.14 2.5 0 .19.01.37.03.54.27-1.75 1.81-3.05 3.65-3.05.41 0 .8.07 1.17.2 1.31.46 2.25 1.71 2.25 3.18 0 .4-.08.78-.21 1.13-.23.6-.66 1.1-1.21 1.42-.1.08-.2.14-.31.2-.44.24-.94.38-1.48.38-.79 0-1.52-.31-2.17-.89-.37-.34-.71-.71-1.01-1.11-.3-.47-.64-.84-1.01-1.14-.34-.37-.68-.71-1.01-1.11z"/></svg>
+          </div>
           <div class="download-platform">Linux</div>
-          <div class="download-filename">SMARTSEARCH_v1_linux.AppImage</div>
+          <div class="download-filename">SEARCHWIZARD_linux.AppImage</div>
           <div class="download-meta">
-            <span>Version 26.0.1</span>
+            <span>Version 26.1.1</span>
             <span>·</span>
             <span>AppImage</span>
           </div>
-          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases/latest/download/SMARTSEARCH_linux.AppImage" class="btn-download" download>
+          <a href="https://github.com/deepanmpc/SMART-SEARCH/releases/latest/download/SEARCHWIZARD_linux.AppImage" class="btn-download" download onclick="setTimeout(() => window.open('https://github.com/deepanmpc/SMART-SEARCH', '_blank'), 500)">
             <span>↓</span> Download for Linux
           </a>
           <div class="download-note">Ubuntu 20.04+ / Debian</div>
@@ -525,7 +543,7 @@
         <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/usage.md" target="_blank" class="doc-card">
           <div class="doc-icon">⌨️</div>
           <h4>Usage Guide</h4>
-          <p>Learn semantic search, AI ask mode, filters, keyboard shortcuts, and more.</p>
+          <p>Learn semantic search, assistant mode, filters, keyboard shortcuts, and more.</p>
           <span class="doc-link">Read guide →</span>
         </a>
         <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/faq.md" target="_blank" class="doc-card">
@@ -602,48 +620,6 @@
   </section>
 
   <!-- ───────────────────────────── FOOTER ───────────────────────────── -->
-  <footer id="footer">
-    <div class="container">
-      <div class="footer-top">
-        <div class="footer-brand">
-          <a href="#" class="nav-logo">
-            <img src="assets/icon.png" alt="Search Wizard Logo" class="logo-img" style="width: 24px; height: 24px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-            <span class="logo-text">Search Wizard</span>
-          </a>
-          <p>AI-powered local search engine.<br>Free. Open Source. Privacy First.</p>
-        </div>
-        <div class="footer-links">
-          <div class="footer-col">
-            <div class="footer-col-title">Product</div>
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
-            <a href="#download">Download</a>
-          </div>
-          <div class="footer-col">
-            <div class="footer-col-title">Resources</div>
-            <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/setup.md" target="_blank">Setup Guide</a>
-            <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/usage.md" target="_blank">Usage Guide</a>
-            <a href="https://github.com/deepanmpc/SMART-SEARCH/blob/main/docs/faq.md" target="_blank">FAQ</a>
-          </div>
-          <div class="footer-col">
-            <div class="footer-col-title">Links</div>
-            <a href="https://github.com/deepanmpc/SMART-SEARCH" target="_blank">GitHub</a>
-            <a href="https://github.com/deepanmpc/SMART-SEARCH/releases" target="_blank">Releases</a>
-            <a href="https://github.com/deepanmpc/SMART-SEARCH/issues" target="_blank">Report Issue</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>© 2026 Search Wizard. MIT License. Built by <a href="https://github.com/deepanmpc" target="_blank">Deepan Chandrasekaran</a>.</p>
-        <p class="footer-sub">Host on <a href="https://pages.github.com" target="_blank">GitHub Pages</a> · deepanmpc.github.io/SMART-SEARCH</p>
-      </div>
-    </div>
-  </footer>
-
-  <script src="script.js"></script>
-</body>
-</html>
-──────────────────────── FOOTER ───────────────────────────── -->
   <footer id="footer">
     <div class="container">
       <div class="footer-top">
