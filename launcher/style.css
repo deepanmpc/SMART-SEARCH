@@ -139,7 +139,7 @@ body {
 }
 
 #searchInput::placeholder {
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* Icon Dock */
@@ -472,11 +472,22 @@ audio {
 .answer-box {
     padding: 18px;
     background: rgba(0, 122, 255, 0.1);
-    border: 1px solid rgba(0, 122, 255, 0.2);
+    border: 1px solid rgba(0, 122, 255, 0.3);
     border-radius: 12px;
     line-height: 1.6;
     font-size: 15px;
-    color: #e0e0e0;
+    color: #ffffff;
+}
+
+.info-box {
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 14px;
+    color: #ffffff;
+    text-align: center;
 }
 
 /* Wizard Styling */
