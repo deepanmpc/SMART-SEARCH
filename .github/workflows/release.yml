@@ -60,9 +60,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            launcher/dist/SEARCHWIZARD_mac.dmg
-            launcher/dist/SEARCHWIZARD_windows.exe
-            launcher/dist/SEARCHWIZARD_linux.AppImage
+            launcher/dist/SEARCHWIZARD_mac_*.dmg
+            launcher/dist/SEARCHWIZARD_windows_*.exe
+            launcher/dist/SEARCHWIZARD_linux_*.AppImage
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
