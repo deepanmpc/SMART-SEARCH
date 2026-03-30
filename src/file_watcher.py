@@ -53,6 +53,7 @@ class DebouncedWatcher(FileSystemEventHandler):
         if self.timer:
             self.timer.cancel()
         self.timer = threading.Timer(self.debounce_seconds, self._process_events)
+        self.timer.daemon = True
         self.timer.start()
 
     def _process_events(self):
@@ -67,7 +68,11 @@ class DebouncedWatcher(FileSystemEventHandler):
 
 def start_watcher(db_path, index_callback):
     conn = init_db(db_path)
-    folders = get_all_watched_folders(conn)
+    try:
+        folders = get_all_watched_folders(conn)
+    finally:
+        conn.close()
+
     if not folders:
         print("Watcher: No folders to watch.")
         return None
@@ -75,13 +80,26 @@ def start_watcher(db_path, index_callback):
     print(f"Watcher: Starting observer for folders: {folders}")
     observer = Observer()
     event_handler = DebouncedWatcher(index_callback)
+    scheduled_paths = 0
     
     for folder in folders:
-        if os.path.exists(folder):
+        if not os.path.isdir(folder):
+            print(f"Watcher: Folder does not exist, skipping: {folder}")
+            continue
+        try:
             print(f"Watcher: Scheduling watch for {folder}")
             observer.schedule(event_handler, folder, recursive=True)
-        else:
-            print(f"Watcher: Folder does not exist, skipping: {folder}")
+            scheduled_paths += 1
+        except Exception as e:
+            print(f"Watcher: Failed to watch {folder}: {e}")
+
+    if scheduled_paths == 0:
+        print("Watcher: No valid folders could be scheduled.")
+        return None
     
-    observer.start()
+    try:
+        observer.start()
+    except Exception as e:
+        print(f"Watcher: Failed to start observer: {e}")
+        return None
     return observer

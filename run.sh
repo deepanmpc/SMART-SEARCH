@@ -8,7 +8,7 @@ echo "🚀 Starting SMART-SEARCH Spotlight AI Launcher..."
 # 1. Start the FastAPI backend
 echo "📦 Starting Backend (FastAPI) on port $API_PORT..."
 export PYTHONPATH=$PYTHONPATH:$(pwd)/src
-.venv/bin/python3 -m uvicorn api:app --host 0.0.0.0 --port $API_PORT --app-dir src > backend.log 2>&1 &
+.venv/bin/python3 -m uvicorn api:app --host 127.0.0.1 --port $API_PORT --app-dir src > backend.log 2>&1 &
 BACKEND_PID=$!
 trap "kill $BACKEND_PID" EXIT
 
@@ -16,7 +16,7 @@ trap "kill $BACKEND_PID" EXIT
 echo "⏳ Waiting for backend to initialize..."
 MAX_RETRIES=10
 COUNT=0
-while ! curl -s http://localhost:$API_PORT/stats > /dev/null; do
+while ! curl -s http://127.0.0.1:$API_PORT/stats > /dev/null; do
     sleep 1
     COUNT=$((COUNT+1))
     if [ $COUNT -ge $MAX_RETRIES ]; then

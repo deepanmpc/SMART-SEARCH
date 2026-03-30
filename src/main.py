@@ -58,8 +58,18 @@ from crawler import SUPPORTED_EXTENSIONS as SUPPORTED
 SKIP_DIRS   = {".git", ".venv", "__pycache__", "node_modules", ".DS_Store"}
 _SRC = Path(__file__).parent
 _ROOT = _SRC.parent
-INDEX_PATH = str(_ROOT / "index.faiss")
-DB_PATH = str(_ROOT / "metadata.db")
+_DATA_DIR_ENV = os.environ.get("SMART_SEARCH_DATA_DIR")
+if _DATA_DIR_ENV:
+    try:
+        _DATA_ROOT = Path(_DATA_DIR_ENV).expanduser().resolve()
+        _DATA_ROOT.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        _DATA_ROOT = _ROOT
+else:
+    _DATA_ROOT = _ROOT
+_DATA_ROOT.mkdir(parents=True, exist_ok=True)
+INDEX_PATH = str(_DATA_ROOT / "index.faiss")
+DB_PATH = str(_DATA_ROOT / "metadata.db")
 CHUNK_WORDS = 100
 OVERLAP     = 25
 

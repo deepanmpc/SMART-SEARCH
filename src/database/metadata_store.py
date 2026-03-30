@@ -3,20 +3,33 @@ SQLite metadata store — maps vector IDs to file metadata.
 """
 
 import sqlite3
+import os
 from typing import List, Dict, Any
 
 from pathlib import Path
-DB_PATH = str(Path(__file__).parent.parent.parent / "metadata.db")
+_ROOT = Path(__file__).parent.parent.parent
+_DATA_DIR_ENV = os.environ.get("SMART_SEARCH_DATA_DIR")
+if _DATA_DIR_ENV:
+    try:
+        _DATA_ROOT = Path(_DATA_DIR_ENV).expanduser().resolve()
+        _DATA_ROOT.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        _DATA_ROOT = _ROOT
+else:
+    _DATA_ROOT = _ROOT
+_DATA_ROOT.mkdir(parents=True, exist_ok=True)
+DB_PATH = str(_DATA_ROOT / "metadata.db")
 
 
 def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=30)
     conn.row_factory = sqlite3.Row
     
     # Performance pragmas
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA cache_size=10000;")
+    conn.execute("PRAGMA busy_timeout=30000;")
     
     conn.execute("""
         CREATE TABLE IF NOT EXISTS chunks (

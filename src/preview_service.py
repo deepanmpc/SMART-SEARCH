@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from itertools import islice
 from PyPDF2 import PdfReader
 
 from functools import lru_cache
@@ -22,7 +23,7 @@ def generate_preview(file_path: str) -> dict:
     try:
         if ext in ('.txt', '.md', '.py', '.js', '.json', '.html', '.css'):
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                lines = [next(f) for _ in range(20)]
+                lines = list(islice(f, 20))
                 preview["content"] = "".join(lines)
         
         elif ext == '.pdf':

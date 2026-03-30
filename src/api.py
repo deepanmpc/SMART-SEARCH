@@ -4,6 +4,7 @@ import time
 import psutil
 from pathlib import Path
 from collections import Counter
+from typing import List
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -32,13 +33,16 @@ def watcher_callback(to_index, to_delete):
     if to_delete:
         with INDEXING_LOCK:
             conn = init_db(DB_PATH)
-            for path in to_delete:
-                clear_document(conn, path)
+            try:
+                for path in to_delete:
+                    clear_document(conn, path)
+            finally:
+                conn.close()
     
     if to_index:
         # Re-use run_indexing logic but with specific files
         # We start it in a separate thread to not block the watcher's thread
-        threading.Thread(target=run_indexing, args=(to_index, True)).start()
+        threading.Thread(target=run_indexing, args=(to_index, True), daemon=True).start()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,12 +65,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def _ensure_api_key_configured():
+    key = (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "").strip()
+    if not key:
+        raise HTTPException(
+            status_code=400,
+            detail="Gemini API key is missing. Open settings and save your API key, then try again."
+        )
+
 @app.exception_handler(ClientError)
 async def genai_exception_handler(request, exc: ClientError):
     if exc.status_code == 429:
         return JSONResponse(
             status_code=429,
             content={"detail": "Gemini API Quota Exceeded (1000 requests/day). Please wait a few hours or check your billing."}
+        )
+    if exc.status_code in (401, 403):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Gemini API authentication failed. Please verify your API key in settings."}
         )
     return JSONResponse(
         status_code=500,
@@ -171,8 +188,15 @@ from functools import lru_cache
 def _cached_semantic_search(query: str, top_k: int, index_path: str, db_path: str):
     return semantic_search(query, top_k=top_k, index_path=index_path, db_path=db_path)
 
+def _clear_search_cache():
+    try:
+        _cached_semantic_search.cache_clear()
+    except Exception:
+        pass
+
 @app.post("/search", response_model=SearchResponse)
 def search_endpoint(req: SearchRequest):
+    _ensure_api_key_configured()
     # Optimize: Increase fetching multiplier for all queries to ensure images surface,
     # even when text scores highly.
     multiplier = 50 if req.file_type == "image" else 5
@@ -214,6 +238,7 @@ def search_endpoint(req: SearchRequest):
 
 @app.post("/ask", response_model=AskResponse)
 def ask_endpoint(req: AskRequest):
+    _ensure_api_key_configured()
     # Mapping for filtering
     TYPE_MAP = {
         "text": ["text", "pdf", "docx", "pptx"],
@@ -308,6 +333,8 @@ def run_indexing(paths: List[str], is_update: bool = False):
         PAUSE_INDEXING_EVENT.clear()
         INDEX_PROGRESS["is_indexing"] = True
         INDEX_PROGRESS["is_paused"] = False
+        INDEX_PROGRESS["current_file"] = ""
+        INDEX_PROGRESS["total_files"] = 0
         INDEX_PROGRESS["processed_files"] = 0
         INDEX_PROGRESS["percentage"] = 0.0
     
@@ -354,15 +381,24 @@ def run_indexing(paths: List[str], is_update: bool = False):
                 INDEX_PROGRESS["current_file"] = fm["filename"]
                 # Processed files incremented at end of this function
 
+            should_skip = False
             with INDEXING_LOCK:
                 faiss_idx = FaissIndex()
                 if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
                 if faiss_idx.total_vectors >= limit: return
                     
                 conn = init_db(DB_PATH)
-                if is_document_indexed(conn, fm["path"]):
-                    if is_update: clear_document(conn, fm["path"])
-                    else: return
+                try:
+                    if is_document_indexed(conn, fm["path"]):
+                        if is_update:
+                            clear_document(conn, fm["path"])
+                        else:
+                            should_skip = True
+                finally:
+                    conn.close()
+
+            if should_skip:
+                return
 
             try:
                 if fm["type"] in ("image", "audio", "video"):
@@ -392,13 +428,16 @@ def run_indexing(paths: List[str], is_update: bool = False):
                                 faiss_idx = FaissIndex()
                                 if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
                                 conn = init_db(DB_PATH)
-                                for idx_in_batch, (c, vec) in enumerate(zip(batch, vecs)):
-                                    if vec is not None:
-                                        v_ids = faiss_idx.add([vec])
-                                        f_id = make_file_id(fm["path"], b_idx + idx_in_batch)
-                                        desc = f"[{fm['type'].capitalize()} Content]"
-                                        insert_chunk(conn, v_ids[0], f_id, fm, b_idx + idx_in_batch, desc)
-                                faiss_idx.save(INDEX_PATH)
+                                try:
+                                    for idx_in_batch, (c, vec) in enumerate(zip(batch, vecs)):
+                                        if vec is not None:
+                                            v_ids = faiss_idx.add([vec])
+                                            f_id = make_file_id(fm["path"], b_idx + idx_in_batch)
+                                            desc = f"[{fm['type'].capitalize()} Content]"
+                                            insert_chunk(conn, v_ids[0], f_id, fm, b_idx + idx_in_batch, desc)
+                                    faiss_idx.save(INDEX_PATH)
+                                finally:
+                                    conn.close()
                 else:
                     result = parse_document(fm["path"])
                     if result["success"]:
@@ -415,12 +454,15 @@ def run_indexing(paths: List[str], is_update: bool = False):
                                     faiss_idx = FaissIndex()
                                     if Path(INDEX_PATH).exists(): faiss_idx.load(INDEX_PATH)
                                     conn = init_db(DB_PATH)
-                                    for idx_in_batch, (txt, vec) in enumerate(zip(batch, vecs)):
-                                        if vec is not None:
-                                            v_ids = faiss_idx.add([vec])
-                                            f_id = make_file_id(fm["path"], b_idx + idx_in_batch)
-                                            insert_chunk(conn, v_ids[0], f_id, fm, b_idx + idx_in_batch, txt)
-                                    faiss_idx.save(INDEX_PATH)
+                                    try:
+                                        for idx_in_batch, (txt, vec) in enumerate(zip(batch, vecs)):
+                                            if vec is not None:
+                                                v_ids = faiss_idx.add([vec])
+                                                f_id = make_file_id(fm["path"], b_idx + idx_in_batch)
+                                                insert_chunk(conn, v_ids[0], f_id, fm, b_idx + idx_in_batch, txt)
+                                        faiss_idx.save(INDEX_PATH)
+                                    finally:
+                                        conn.close()
             except Exception as e:
                 print(f"Error processing {fm['path']}: {e}")
             
@@ -445,13 +487,8 @@ def run_indexing(paths: List[str], is_update: bool = False):
             INDEX_PROGRESS["is_indexing"] = False
             STOP_INDEXING_EVENT.clear()
             PAUSE_INDEXING_EVENT.clear()
-
-    except Exception as e:
-        print(f"Error in background indexing: {e}")
-        if not is_update:
-            INDEX_PROGRESS["is_indexing"] = False
-            STOP_INDEXING_EVENT.clear()
-            PAUSE_INDEXING_EVENT.clear()
+    finally:
+        _clear_search_cache()
 
 
 from preview_service import generate_preview
@@ -466,29 +503,45 @@ def preview_endpoint(req: PreviewRequest):
 @app.post("/index", response_model=IndexResponse)
 def index_endpoint(req: IndexRequest, background_tasks: BackgroundTasks):
     global INDEX_PROGRESS, WATCHER_OBSERVER
+    _ensure_api_key_configured()
     if INDEX_PROGRESS["is_indexing"]:
         return IndexResponse(success=False, message="Indexing already in progress", files_indexed=0, chunks_indexed=0)
     
     # Pre-check paths
+    normalized_paths = []
+    seen_paths = set()
     conn = init_db(DB_PATH)
-    for p in req.paths:
-        path = os.path.expanduser(p)
-        if not Path(path).exists():
-            raise HTTPException(status_code=404, detail=f"Path not found: {path}")
-        # Add to watched folders
-        if os.path.isdir(path):
-            add_watched_folder(conn, path)
+    try:
+        for p in req.paths:
+            path = os.path.abspath(os.path.expanduser(p))
+            if path in seen_paths:
+                continue
+            if not Path(path).exists():
+                raise HTTPException(status_code=404, detail=f"Path not found: {path}")
+            seen_paths.add(path)
+            normalized_paths.append(path)
+            # Add to watched folders
+            if os.path.isdir(path):
+                add_watched_folder(conn, path)
+    finally:
+        conn.close()
+
+    if not normalized_paths:
+        raise HTTPException(status_code=400, detail="No valid paths provided.")
 
     # Restart watcher to pick up new folders
     if WATCHER_OBSERVER:
         print("API: Restarting file watcher...")
         WATCHER_OBSERVER.stop()
-        # We don't join() here to avoid blocking the request, 
-        # but we start a new one. The old one will die in background.
+        try:
+            WATCHER_OBSERVER.join(timeout=2)
+        except Exception:
+            pass
     
     WATCHER_OBSERVER = start_watcher(DB_PATH, watcher_callback)
 
-    background_tasks.add_task(run_indexing, req.paths)
+    _clear_search_cache()
+    background_tasks.add_task(run_indexing, normalized_paths)
     return IndexResponse(success=True, message="Indexing started in background", files_indexed=0, chunks_indexed=0)
 
 @app.delete("/index", response_model=IndexResponse)
@@ -513,6 +566,10 @@ def delete_index_endpoint():
         # 2. Stop Watcher
         if WATCHER_OBSERVER:
             WATCHER_OBSERVER.stop()
+            try:
+                WATCHER_OBSERVER.join(timeout=2)
+            except Exception:
+                pass
             WATCHER_OBSERVER = None
 
         # 3. Delete files
@@ -522,8 +579,18 @@ def delete_index_endpoint():
             os.remove(DB_PATH)
             
         # 4. Re-initialize DB
-        init_db(DB_PATH)
+        conn = init_db(DB_PATH)
+        conn.close()
+        _clear_search_cache()
         
         return IndexResponse(success=True, message="Index deleted successfully", files_indexed=0, chunks_indexed=0)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete index: {e}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    host = os.getenv("SMART_SEARCH_API_HOST", "127.0.0.1")
+    port = int(os.getenv("SMART_SEARCH_API_PORT", "8000"))
+    uvicorn.run(app, host=host, port=port, reload=False)

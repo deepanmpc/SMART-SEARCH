@@ -1,6 +1,6 @@
 {
   "name": "search-wizard",
-  "version": "26.1.4",
+  "version": "26.1.5",
   "description": "Spotlight-style Launcher for SEARCH WIZARD",
   "main": "main.js",
   "author": "Deepan Chandrasekaran",
@@ -31,21 +31,23 @@
     "mac": {
       "target": "dmg",
       "category": "public.app-category.utilities",
-      "artifactName": "SEARCHWIZARD_mac.${ext}"
+      "artifactName": "SEARCHWIZARD_mac_${arch}.${ext}"
     },
     "win": {
       "target": "nsis",
-      "artifactName": "SEARCHWIZARD_windows.${ext}"
+      "artifactName": "SEARCHWIZARD_windows_${arch}.${ext}"
     },
     "linux": {
       "target": "AppImage",
-      "artifactName": "SEARCHWIZARD_linux.${ext}"
+      "artifactName": "SEARCHWIZARD_linux_${arch}.${ext}"
     },
     "extraResources": [
       {
         "from": "backend",
         "to": "backend",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "directories": {

@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const { pathToFileURL } = require('url');
 
 const searchInput = document.getElementById('searchInput');
 const indexFolderBtn = document.getElementById('indexFolderBtn');
@@ -36,9 +37,10 @@ const step1 = document.getElementById('wizardStep1');
 const step2 = document.getElementById('wizardStep2');
 const step3 = document.getElementById('wizardStep3');
 
-const API_URL = 'http://localhost:8000';
+let API_URL = 'http://127.0.0.1:8000';
 let debounceTimer;
 let progressPollingInterval;
+let progressPollFailures = 0;
 let activeFilter = 'all';
 let currentResults = [];
 let selectedIndex = -1;
@@ -70,6 +72,62 @@ async function checkOnboarding() {
     } catch (e) {
         console.error('Failed to check onboarding', e);
         return false;
+    }
+}
+
+async function loadApiBaseUrl() {
+    try {
+        const dynamicUrl = await ipcRenderer.invoke('get-api-base-url');
+        if (dynamicUrl && typeof dynamicUrl === 'string') {
+            API_URL = dynamicUrl;
+        }
+    } catch (e) {
+        console.error('Failed to load API base URL, using fallback.', e);
+    }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function toFileUrl(filePath) {
+    try {
+        return pathToFileURL(filePath || '').toString();
+    } catch (e) {
+        return `file://${encodeURI(filePath || '')}`;
+    }
+}
+
+async function displayBackendUnavailable(message) {
+    let detail = '';
+    try {
+        const status = await ipcRenderer.invoke('get-backend-status');
+        if (status) {
+            const exitInfo = status.lastExitCode !== null ? `exit code ${status.lastExitCode}` : null;
+            const errorInfo = status.lastError ? status.lastError : null;
+            const parts = [exitInfo, errorInfo].filter(Boolean);
+            if (parts.length > 0) {
+                detail = parts.join(' | ');
+            }
+        }
+    } catch (e) {
+        // Best effort only
+    }
+
+    if (detail) {
+        const safeDetail = escapeHtml(detail);
+        displayInfo(`${message}<br><span style="opacity:0.7;font-size:11px;">${safeDetail}</span>`, true);
+    } else {
+        displayInfo(message);
     }
 }
 
@@ -113,7 +171,7 @@ async function fetchStats() {
         } else {
             // No key, must show wizard
             setupWizard.classList.remove('hidden');
-            showStep(1);
+            showStep(2);
         }
         updateWindowSize();
     } catch (e) {
@@ -168,12 +226,20 @@ if (helpBtn) helpBtn.onclick = () => {
             </div>
             <div style="font-size: 10px; opacity: 0.5;">Documentation opened in background.</div>
         </div>
-    `);
+    `, true);
 };
 
-fetchStats();
-// Periodically refresh stats to keep UI sync'd
-setInterval(fetchStats, 10000);
+async function initializeApp() {
+    const onboarding = await checkOnboarding();
+    await loadApiBaseUrl();
+    if (!onboarding) {
+        await fetchStats();
+    }
+    // Periodically refresh stats to keep UI sync'd
+    setInterval(fetchStats, 10000);
+}
+
+initializeApp();
 
 if (setupStartBtn) {
     setupStartBtn.onclick = async () => {
@@ -286,6 +352,7 @@ async function displayResults(results) {
             const icon = getFileIcon(res.file_type);
             const semanticScore = getSemanticScore(res.score);
             const displayName = cleanFileName(res.document_name);
+            const safeDisplayName = escapeHtml(displayName);
             
             let snippet = res.chunk_text || '';
             // REMOVE DEVELOPER METADATA: Filter out [Image: tile...] or [Video: ...]
@@ -298,6 +365,7 @@ async function displayResults(results) {
                 else if (res.file_type === 'video') snippet = '🎬 Video file — View preview';
                 else if (res.file_type === 'audio') snippet = '🎵 Audio file — View preview';
             }
+            const safeSnippet = escapeHtml(snippet);
             
             const isTopResult = i === 0;
             const topResultBadge = isTopResult ? `<span style="background: var(--accent); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-right: 8px; vertical-align: middle;">TOP RESULT</span>` : '';
@@ -306,11 +374,11 @@ async function displayResults(results) {
                 <div class="result-title">
                     <div class="result-name-wrapper">
                         <span class="res-icon-bg">${icon}</span>
-                        <span class="result-name-text">${topResultBadge}${displayName}</span>
+                        <span class="result-name-text">${topResultBadge}${safeDisplayName}</span>
                     </div>
                     <span class="result-score">${semanticScore}</span>
                 </div>
-                ${snippet ? `<div class="result-snippet">${snippet}</div>` : ''}
+                ${snippet ? `<div class="result-snippet">${safeSnippet}</div>` : ''}
             `;
             div.onclick = () => {
                 selectResult(i);
@@ -346,32 +414,43 @@ async function selectResult(index) {
     const friendlyType = getUserFriendlyFileType(res.file_type);
     const semanticScore = getSemanticScore(res.score);
     const displayName = cleanFileName(res.document_name);
+    const safeDisplayName = escapeHtml(displayName);
     
     let snippet = res.chunk_text || '';
     if (snippet.startsWith('[') && (snippet.includes(': ') || snippet.includes(' Content]'))) {
         snippet = '';
     }
+    const safeSnippet = escapeHtml(snippet || 'Loading preview...');
+    const openTargetPath = res.file_path || '';
 
     let mediaHtml = `<div class="preview-icon-large">${icon}</div>`;
     if (res.file_type === 'image') {
-        mediaHtml = `<img src="file://${res.file_path}" class="preview-media-img" loading="lazy" onerror="this.outerHTML='<div class=\'preview-icon-large\'>${icon}</div>'">`;
+        mediaHtml = `<img src="${toFileUrl(res.file_path || '')}" class="preview-media-img" loading="lazy" onerror="this.outerHTML='<div class=\\'preview-icon-large\\'>${icon}</div>'">`;
     } else if (res.file_type === 'video') {
-        mediaHtml = `<video src="file://${res.file_path}" class="preview-media-video" controls autoplay muted loop></video>`;
+        mediaHtml = `<video src="${toFileUrl(res.file_path || '')}" class="preview-media-video" controls autoplay muted loop></video>`;
     } else if (res.file_type === 'audio') {
-        mediaHtml = `<audio src="file://${res.file_path}" controls autoplay style="width: 180px; border-radius: 20px;"></audio>`;
+        mediaHtml = `<audio src="${toFileUrl(res.file_path || '')}" controls autoplay style="width: 180px; border-radius: 20px;"></audio>`;
     }
     
     // Initial display
     resultPreview.innerHTML = `
-        <div class="interactive-preview" style="width: auto;" onclick="ipcRenderer.send('open-file', '${res.file_path}')">
+        <div id="previewClickableMedia" class="interactive-preview" style="width: auto;">
             ${mediaHtml}
         </div>
         <div class="preview-content">
             <div class="preview-meta">${semanticScore} • ${friendlyType}</div>
-            <div class="preview-title clickable-title" onclick="ipcRenderer.send('open-file', '${res.file_path}')">${displayName}</div>
-            <div id="enhancedPreview" class="preview-snippet">${snippet || 'Loading preview...'}</div>
+            <div id="previewClickableTitle" class="preview-title clickable-title">${safeDisplayName}</div>
+            <div id="enhancedPreview" class="preview-snippet">${safeSnippet}</div>
         </div>
     `;
+    const previewMedia = document.getElementById('previewClickableMedia');
+    const previewTitle = document.getElementById('previewClickableTitle');
+    if (previewMedia) {
+        previewMedia.onclick = () => ipcRenderer.send('open-file', openTargetPath);
+    }
+    if (previewTitle) {
+        previewTitle.onclick = () => ipcRenderer.send('open-file', openTargetPath);
+    }
 
     // Fetch enhanced preview
     try {
@@ -384,7 +463,7 @@ async function selectResult(index) {
         const enhancedEl = document.getElementById('enhancedPreview');
         if (enhancedEl) {
             if (pData.content) {
-                enhancedEl.innerHTML = `<pre style="white-space: pre-wrap; font-size: 11px; font-family: 'SF Mono', monospace; opacity: 0.9;">${pData.content}</pre>`;
+                enhancedEl.innerHTML = `<pre style="white-space: pre-wrap; font-size: 11px; font-family: 'SF Mono', monospace; opacity: 0.9;">${escapeHtml(pData.content)}</pre>`;
             } else {
                 enhancedEl.innerHTML = '';
             }
@@ -398,7 +477,7 @@ async function selectResult(index) {
 
 function displayAnswer(answer) {
     currentResults = [];
-    resultsList.innerHTML = `<div class="answer-box">🤖 ${answer}</div>`;
+    resultsList.innerHTML = `<div class="answer-box">🤖 ${escapeHtml(answer)}</div>`;
     resultPreview.innerHTML = '';
     
     if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
@@ -409,9 +488,10 @@ function displayAnswer(answer) {
     updateWindowSize();
 }
 
-function displayInfo(message) {
+function displayInfo(message, allowHtml = false) {
     currentResults = [];
-    resultsList.innerHTML = `<div class="info-box">${message}</div>`;
+    const safeMessage = allowHtml ? String(message) : escapeHtml(message);
+    resultsList.innerHTML = `<div class="info-box">${safeMessage}</div>`;
     resultPreview.innerHTML = '';
     
     if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
@@ -425,6 +505,7 @@ function displayInfo(message) {
 // Indexing Progress Polling
 function startPollingProgress() {
     if (progressPollingInterval) clearInterval(progressPollingInterval);
+    progressPollFailures = 0;
     
     indexingOverlay.classList.remove('hidden');
     updateWindowSize();
@@ -481,6 +562,14 @@ function startPollingProgress() {
 
         } catch (e) {
             console.error("Polling error", e);
+            progressPollFailures += 1;
+            if (progressPollFailures >= 3) {
+                clearInterval(progressPollingInterval);
+                progressPollingInterval = null;
+                indexingOverlay.classList.add('hidden');
+                updateWindowSize();
+                await displayBackendUnavailable('❌ Lost connection to backend during indexing.');
+            }
         }
     }, 1000);
 }
@@ -525,10 +614,14 @@ async function handleCommand(val) {
             });
             const data = await res.json();
             hideLoading();
-            displayAnswer(data.answer);
+            if (!res.ok) {
+                displayInfo(`❌ ${data.detail || data.message || 'Ask request failed.'}`);
+                return;
+            }
+            displayAnswer(data.answer || 'No answer returned.');
         } catch (e) {
             hideLoading();
-            displayInfo('❌ Something went wrong. Please try again.');
+            await displayBackendUnavailable('❌ Something went wrong. Please try again.');
         }
         return;
     }
@@ -551,35 +644,56 @@ async function handleCommand(val) {
             return;
         }
         const data = await res.json();
+        if (!res.ok) {
+            hideLoading();
+            displayInfo(`❌ ${data.detail || data.message || 'Search request failed.'}`);
+            return;
+        }
         hideLoading();
         displayResults(data.results);
     } catch (e) {
         hideLoading();
-        displayInfo('❌ Unable to reach Search Wizard backend. Make sure it is running.');
+        await displayBackendUnavailable('❌ Unable to reach Search Wizard backend. Make sure it is running.');
     }
 }
 
-async function startIndexing(paths) {
-    try {
-        const res = await fetch(`${API_URL}/index`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paths: paths })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-            console.log("Indexing started successfully");
-            startPollingProgress();
-        } else {
-            // If already in progress, just show the UI
-            if (data.message && data.message.includes("already in progress")) {
+async function startIndexing(paths, retries = 2) {
+    const normalizedPaths = Array.isArray(paths) ? paths : [paths];
+    const sanitizedPaths = normalizedPaths.filter(p => typeof p === 'string' && p.trim().length > 0);
+    if (sanitizedPaths.length === 0) {
+        displayInfo('❌ Please choose at least one valid file or folder path.');
+        return;
+    }
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const res = await fetch(`${API_URL}/index`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paths: sanitizedPaths })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                console.log("Indexing started successfully");
                 startPollingProgress();
             } else {
-                displayInfo(`❌ Indexing failed: ${data.message || data.detail}`);
+                // If already in progress, just show the UI
+                if (data.message && data.message.includes("already in progress")) {
+                    startPollingProgress();
+                } else {
+                    displayInfo(`❌ Indexing failed: ${data.message || data.detail}`);
+                }
+            }
+            return;
+        } catch (e) {
+            if (attempt < retries) {
+                await loadApiBaseUrl();
+                await sleep(800);
+                continue;
+            } else {
+                await displayBackendUnavailable('❌ Index API error. Make sure backend is running.');
             }
         }
-    } catch (e) {
-        displayInfo('❌ Index API error. Make sure backend is running.');
     }
 }
 
@@ -600,7 +714,7 @@ async function deleteIndex() {
             displayInfo(`❌ Delete failed: ${data.detail}`);
         }
     } catch (e) {
-        displayInfo('❌ Delete API error.');
+        await displayBackendUnavailable('❌ Delete API error.');
     }
 }
 
