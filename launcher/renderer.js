@@ -21,6 +21,7 @@ const indexingPercent = document.getElementById('indexingPercent');
 const stopIndexingBtn = document.getElementById('stopIndexingBtn');
 const pauseIndexingBtn = document.getElementById('pauseIndexingBtn');
 const setupWizard = document.getElementById('setupWizard');
+const shortcutsContainer = document.getElementById('shortcutsContainer');
 const setupStartBtn = document.getElementById('setupStartBtn');
 const helpBtn = document.getElementById('helpBtn');
 
@@ -265,11 +266,15 @@ function cleanFileName(name) {
     return cleaned;
 }
 
-function displayResults(results) {
+async function displayResults(results) {
     currentResults = results;
     resultsList.innerHTML = '';
     resultPreview.innerHTML = '';
     
+    if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
+    resultsList.classList.remove('hidden');
+    resultPreview.classList.remove('hidden');
+
     if (results.length === 0) {
         resultsList.innerHTML = '<div class="info-box">No results found.</div>';
         selectedIndex = -1;
@@ -395,6 +400,11 @@ function displayAnswer(answer) {
     currentResults = [];
     resultsList.innerHTML = `<div class="answer-box">🤖 ${answer}</div>`;
     resultPreview.innerHTML = '';
+    
+    if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
+    resultsList.classList.remove('hidden');
+    resultPreview.classList.add('hidden'); // Hide preview for text answers
+    
     resultsContainer.classList.remove('hidden');
     updateWindowSize();
 }
@@ -403,6 +413,11 @@ function displayInfo(message) {
     currentResults = [];
     resultsList.innerHTML = `<div class="info-box">${message}</div>`;
     resultPreview.innerHTML = '';
+    
+    if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
+    resultsList.classList.remove('hidden');
+    resultPreview.classList.add('hidden');
+    
     resultsContainer.classList.remove('hidden');
     updateWindowSize();
 }
@@ -475,10 +490,16 @@ async function handleCommand(val) {
         currentResults = [];
         resultsList.innerHTML = '';
         resultPreview.innerHTML = '';
-        resultsContainer.classList.add('hidden');
+        resultsList.classList.add('hidden');
+        resultPreview.classList.add('hidden');
+        if (shortcutsContainer) shortcutsContainer.classList.remove('hidden');
+        resultsContainer.classList.remove('hidden');
         updateWindowSize();
         return;
     }
+    
+    if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
+    resultsList.classList.remove('hidden');
 
     if (val === 'status') {
         startPollingProgress();
@@ -631,7 +652,13 @@ function setActiveFilter(type) {
     searchInput.placeholder = PLACEHOLDERS[type] || 'search with magic';
     
     const val = searchInput.value.trim();
-    if (val) handleCommand(val);
+    if (val) {
+        handleCommand(val);
+    } else {
+        if (shortcutsContainer) shortcutsContainer.classList.remove('hidden');
+        resultsContainer.classList.remove('hidden');
+        updateWindowSize();
+    }
 }
 
 function cycleFilter(direction) {
@@ -652,10 +679,15 @@ searchInput.addEventListener('input', (e) => {
         currentResults = [];
         resultsList.innerHTML = '';
         resultPreview.innerHTML = '';
-        resultsContainer.classList.add('hidden');
+        resultsList.classList.add('hidden');
+        resultPreview.classList.add('hidden');
+        if (shortcutsContainer) shortcutsContainer.classList.remove('hidden');
+        resultsContainer.classList.remove('hidden');
         updateWindowSize();
         return;
     }
+    if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
+    resultsList.classList.remove('hidden');
     if (val.startsWith('index ') || val.startsWith('ask ') || val === 'status') return;
 
     debounceTimer = setTimeout(() => {
@@ -713,6 +745,7 @@ searchInput.addEventListener('keydown', (e) => {
         ipcRenderer.send('hide-window');
         searchInput.value = '';
         resultsContainer.classList.add('hidden');
+        if (shortcutsContainer) shortcutsContainer.classList.add('hidden');
         updateWindowSize();
     } else if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -739,6 +772,12 @@ async function init() {
     const onboarding = await checkOnboarding();
     if (!onboarding) {
         fetchStats();
+        const val = searchInput.value.trim();
+        if (!val) {
+            if (shortcutsContainer) shortcutsContainer.classList.remove('hidden');
+            resultsContainer.classList.remove('hidden');
+            updateWindowSize();
+        }
     }
 }
 
@@ -753,6 +792,12 @@ init();
 
 window.addEventListener('focus', () => {
     searchInput.focus();
+    const val = searchInput.value.trim();
+    if (!val) {
+        if (shortcutsContainer) shortcutsContainer.classList.remove('hidden');
+        resultsContainer.classList.remove('hidden');
+        updateWindowSize();
+    }
     checkOnboarding().then(onboarding => {
         if (!onboarding) fetchStats();
     });
