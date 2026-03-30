@@ -183,3 +183,24 @@ statNumbers.forEach(el => {
   el.style.transition = 'opacity 0.5s ease';
   statsObserver.observe(el);
 });
+
+// ─── Fetch Latest Release Version ───
+async function fetchLatestRelease() {
+  try {
+    const response = await fetch('https://api.github.com/repos/deepanmpc/SMART-SEARCH/releases/latest');
+    if (!response.ok) return;
+    const data = await response.json();
+    const version = data.name || data.tag_name;
+    if (version) {
+      const cleanVersion = version.replace(/^v/, '');
+      document.querySelectorAll('.download-meta span:first-child').forEach(span => {
+        if (span.textContent.includes('Version')) {
+          span.textContent = `Version ${cleanVersion}`;
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching latest release:', error);
+  }
+}
+fetchLatestRelease();
