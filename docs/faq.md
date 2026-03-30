@@ -1,4 +1,4 @@
-# SMART SEARCH FAQ
+# SEARCH WIZARD FAQ
 
 ## Is my data private?
 **Yes.** Smart Search indexes your files locally. Only the content chunks (small snippets) are sent to Google's API for embedding or question-answering. Your actual files never leave your machine.
@@ -17,3 +17,4 @@ Smart Search automatically watches for file changes in your indexed folders. If 
 
 ## Can I index my whole hard drive?
 While possible, we recommend indexing specific project or document folders for the best performance and relevance.
+.

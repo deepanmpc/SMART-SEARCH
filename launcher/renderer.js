@@ -158,7 +158,7 @@ if (helpBtn) helpBtn.onclick = () => {
         <div style="text-align: left; padding: 10px;">
             <div style="margin-bottom: 15px;">
                 <h4 style="color: var(--accent); margin-bottom: 5px;">🔒 Privacy First</h4>
-                <p style="font-size: 11px; opacity: 0.8; line-height: 1.4;">Smart Search runs 100% locally. Your files never leave your machine. Only semantic embeddings are generated via your Gemini API key.</p>
+                <p style="font-size: 11px; opacity: 0.8; line-height: 1.4;">Search Wizard runs 100% locally. Your files never leave your machine. Only semantic embeddings are generated via your Gemini API key.</p>
             </div>
             <div style="margin-bottom: 10px;">
                 <h4 style="color: var(--accent); margin-bottom: 5px;">💡 Quick Tip</h4>
@@ -270,7 +270,7 @@ function displayResults(results) {
     resultPreview.innerHTML = '';
     
     if (results.length === 0) {
-        resultsList.innerHTML = '<div class="info-box" style="padding: 24px; text-align: center; color: var(--text-secondary);">No results found.</div>';
+        resultsList.innerHTML = '<div class="info-box">No results found.</div>';
         selectedIndex = -1;
     } else {
         results.forEach((res, i) => {
@@ -533,7 +533,7 @@ async function handleCommand(val) {
         displayResults(data.results);
     } catch (e) {
         hideLoading();
-        displayInfo('❌ Unable to reach Smart Search backend. Make sure it is running.');
+        displayInfo('❌ Unable to reach Search Wizard backend. Make sure it is running.');
     }
 }
 
@@ -734,7 +734,7 @@ searchInput.addEventListener('keydown', (e) => {
 });
 
 async function init() {
-    console.log('Smart Search Renderer Initializing...');
+    console.log('Search Wizard Renderer Initializing...');
     const onboarding = await checkOnboarding();
     if (!onboarding) {
         fetchStats();

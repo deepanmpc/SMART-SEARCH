@@ -46,13 +46,14 @@ revealEls.forEach(el => revealObserver.observe(el));
 
 // ─── Hero typing effect ───
 const phrases = [
-  'photo of sunset at beach',
-  'Q4 revenue chart screenshot',
-  'machine learning notes',
-  'video of birthday party 2024',
+  'photo of a person wearing blue coolers',
+  'a music that sounds like a lions roar',
+  'screenshot of a pizza recipe from last month',
+  'video of me attempting a backflip',
+  'voice note where I hummed a jazz tune',
+  'screenshot where I was on a call',
   'PDF about neural networks',
   'code review comments',
-  'audio recording from meeting',
 ];
 let phraseIndex = 0;
 let charIndex = 0;

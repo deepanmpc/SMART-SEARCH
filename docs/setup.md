@@ -1,13 +1,13 @@
-# SMART SEARCH Setup Guide
+# SEARCH WIZARD Setup Guide
 
-Welcome to SMART SEARCH! Setting up your AI-powered local search is simple.
+Welcome to SEARCH WIZARD! Setting up your local search is simple.
 
 ## 1. Get a Google Gemini API Key
-Smart Search requires a Gemini API key for local embeddings and AI chat.
+Search Wizard requires a Gemini API key for local embeddings and assistant mode.
 1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey).
 2. Click **Create API Key**.
 3. Copy the key.
-4. Paste it into the Smart Search onboarding screen.
+4. Paste it into the Search Wizard onboarding screen.
 
 ## 2. Index Your Files
 Indexing is the process of "reading" your files so they can be searched semantically.

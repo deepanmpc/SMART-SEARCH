@@ -2,10 +2,9 @@
 
 # ✦ SEARCH WIZARD
 
+### Spotlight for your computer.
 
-### AI Spotlight for your computer.
-
-Search images, videos, audio, and documents using natural language.
+Search images, videos, audio, and documents using natural language. It's not AI, it's completely AI-free — just pure math with magic.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)]()
@@ -17,14 +16,14 @@ Search images, videos, audio, and documents using natural language.
 
 ---
 
-## ✨ What is Smart Search?
+## ✨ What is Search Wizard?
 
-Smart Search is a **local, AI-powered search engine** that gives your computer a "semantic brain". Instead of hunting for filenames, just type what you remember:
+Search Wizard is a **local search engine** that gives your computer a "semantic brain". It's not AI, it's completely AI-free — just pure math with magic. Instead of hunting for filenames, just type what you remember:
 
-> *"screenshot of the meeting notes about Q4 revenue"*
-> *"photo of my dog at the park from last summer"*
-> *"that PDF explaining transformer architectures"*
-> *"audio recording from the team sync"*
+> *"photo of a person wearing blue coolers"*
+> *"a music that sounds like a lions roar"*
+> *"screenshot of a pizza recipe from last month"*
+> *"voice note where I hummed a jazz tune"*
 
 It works across **images, videos, audio, PDFs, Word docs, and code files** using the power of Google Gemini Multimodal Embeddings.
 
@@ -32,7 +31,7 @@ It works across **images, videos, audio, PDFs, Word docs, and code files** using
 
 ## 🎬 Demo
 
-![Smart Search Demo](https://raw.githubusercontent.com/deepanmpc/SMART-SEARCH/main/assets/demo.gif)
+![Search Wizard Demo](https://raw.githubusercontent.com/deepanmpc/SMART-SEARCH/main/assets/demo.gif)
 
 *Note: Replace with actual demo GIF once recorded.*
 
@@ -40,11 +39,11 @@ It works across **images, videos, audio, PDFs, Word docs, and code files** using
 
 ## 🚀 Key Features
 
-- 🧠 **AI Semantic Search**: Search by meaning, not titles. "sunset at the beach" finds the right file even if it's named `IMG_9021.jpg`.
-- 🎨 **Multimodal Support**: One search for everything. Images, videos, audio, and complex documents (PDF, DOCX).
+- 🪄 **Semantic Search**: Search by meaning, not titles. "sunset at the beach" finds the right file even if it's named `IMG_9021.jpg`.
+- 📊 **Multimodal Support**: One search for everything. Images, videos, audio, and complex documents (PDF, DOCX).
 - ⚡ **Blazing Fast**: Spotlight-style launcher opening in **<150ms**.
 - 👁️ **Instant Preview**: Rich preview pane with thumbnails, text snippets, and metadata.
-- 🤖 **AI Assistant Mode**: Ask questions about your files: `ask what do my meeting notes say about our launch date?`
+- 🧙 **Assistant Mode**: Ask questions about your files: `ask what do my meeting notes say about our launch date?`
 - 🔒 **Privacy First**: Everything runs **100% locally**. Your files never leave your machine.
 - 🖱️ **Keyboard-First**: Full navigation with arrows, `Space` to preview, and `Enter` to open.
 
@@ -89,18 +88,17 @@ graph TD
 ## 🔍 Example Queries
 
 Try these in the search bar:
-- `images from my trip to Goa`
-- `notes about machine learning from last week`
-- `screenshot where I was on a zoom call`
-- `the PDF about neural network architectures`
-- `video of the birthday party`
-- `audio recording from the manager sync`
+- `photo of a person wearing blue coolers`
+- `a music that sounds like a lions roar`
+- `screenshot of a pizza recipe from last month`
+- `video of me attempting a backflip`
+- `voice note where I hummed a jazz tune`
 
 ---
 
 ## 🔒 Privacy & Trust
 
-Smart Search was built with privacy as a core principle:
+Search Wizard was built with privacy as a core principle:
 - **No File Uploads**: Your actual files are never uploaded to any server.
 - **Local Database**: The vector index (FAISS) and metadata (SQLite) are stored entirely on your computer.
 - **API Security**: Only short text/image snippets are sent to Google Gemini to generate embeddings.
@@ -109,16 +107,15 @@ Smart Search was built with privacy as a core principle:
 
 ##  macOS Security Note
 
-If you download the `.dmg` and see a message saying **"SMART SEARCH is damaged and can't be opened"**, this is a standard macOS security feature (Gatekeeper) for unsigned applications.
+If you download the `.dmg` and see a message saying **"SEARCH WIZARD is damaged and can't be opened"**, this is a standard macOS security feature (Gatekeeper) for unsigned applications.
 
-### 🛠️ How to fix:
+### 🛠️ How to fix (COMPULSORY):
 1.  Open **Terminal** on your Mac.
 2.  Run this command:
     ```bash
-    sudo xattr -rd com.apple.quarantine /Applications/SMART\ SEARCH.app
+    xattr -cr /Applications/SEARCH\ WIZARD.app
     ```
-3.  Enter your password and hit Enter.
-4.  Open the app! It will work perfectly.
+3.  Open the app! It will work perfectly.
 
 ---
 
@@ -164,6 +161,6 @@ MIT License. Free for everyone!
 
 **⭐ Star this repo if you find it useful!**
 
-*"This is like Spotlight — but smarter."*
+*"This is like Spotlight — but Search Wizard."*
 
 </div>

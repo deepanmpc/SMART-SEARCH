@@ -1,6 +1,6 @@
-# Smart Search Website
+# Search Wizard Website
 
-Complete product website for Smart Search — AI Spotlight For Your Computer.
+Complete product website for Search Wizard — Spotlight For Your Computer.
 
 ## Files
 - `index.html` — Full single-page website

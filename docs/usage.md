@@ -1,13 +1,13 @@
-# SMART SEARCH Usage Guide
+# SEARCH WIZARD Usage Guide
 
-Smart Search is more than just a filename search; it understands the *content* of your files.
+Search Wizard is more than just a filename search; it understands the *content* of your files using pure math.
 
 ## 1. Semantic Search
 Just type what you are looking for in natural language:
 - `machine learning notes from last week`
 - `receipt for the hotel stay`
-- `image of a white dog in the park`
-- `video of the sunset`
+- `photo of a person wearing blue coolers`
+- `a music that sounds like a lions roar`
 
 ## 2. Filters
 Use the icons in the filter dock to narrow down results:
@@ -17,8 +17,8 @@ Use the icons in the filter dock to narrow down results:
 - **🎞️ Videos:** MP4, MOV, etc.
 - **≋ Audio:** MP3, WAV, etc.
 
-## 3. AI Assistant Mode
-Prefix your query with `ask ` to use the built-in AI assistant:
+## 3. Assistant Mode
+Prefix your query with `ask ` to use the built-in assistant:
 - `ask what are the main points in the transformers paper?`
 - `ask summarize my notes on neural networks`
 The assistant will read the top relevant files and give you a direct answer.
