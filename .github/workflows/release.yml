@@ -63,6 +63,7 @@ jobs:
             launcher/dist/SEARCHWIZARD_mac_*.dmg
             launcher/dist/SEARCHWIZARD_windows_*.exe
             launcher/dist/SEARCHWIZARD_linux_*.AppImage
-          generate_release_notes: true
+          generate_release_notes: ${{ matrix.os == 'ubuntu-latest' }}
+          append_body: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
