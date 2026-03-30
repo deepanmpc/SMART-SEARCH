@@ -146,6 +146,29 @@ document.addEventListener('mousemove', (e) => {
   });
 });
 
+// ─── Download and Star Reminder ───
+function handleDownloadClick() {
+  // Open GitHub repo in a new tab to encourage starring
+  setTimeout(() => {
+    window.open('https://github.com/deepanmpc/SMART-SEARCH', '_blank');
+  }, 1000);
+
+  // Show a "Thank You" toast
+  showToast("⭐ Support us by starring the repo!");
+}
+
+function showToast(message) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.className = 'show';
+  setTimeout(() => { toast.className = toast.className.replace('show', ''); }, 4000);
+}
+
 // ─── Stats counter animation ───
 const statNumbers = document.querySelectorAll('.stat-number');
 const statsObserver = new IntersectionObserver((entries) => {
