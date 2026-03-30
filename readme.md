@@ -54,16 +54,22 @@ It works across **images, videos, audio, PDFs, Word docs, and code files** using
 
 ```mermaid
 graph TD
-    A[User Files] --> B[Content Extraction]
-    B --> C[Gemini API]
-    C -->|768d Embeddings| D[FAISS Vector Index]
-    D --> E[Semantic Search]
-    F[User Query] --> G[Gemini API]
-    G -->|Query Vector| E
-    E --> H[Instant Results & Previews]
+    A[User Folders] --> B[Auto-Indexing / Watchdog]
+    B --> C[Content Extraction]
+    C --> D[Gemini API]
+    D -->|768d Embeddings| E[FAISS Vector Index]
+    C -->|Text Tokens| F[BM25 Keyword Index]
+    
+    G[User Query] --> H[Gemini API]
+    H -->|Query Vector| I[Hybrid Search Engine]
+    G -->|Keywords| I
+    
+    E --> I
+    F --> I
+    I --> J[Ranked Results & Previews]
 ```
 
-**Tech Stack:** Electron, FastAPI (Python), Google Gemini, FAISS, SQLite.
+**Tech Stack:** Electron, FastAPI (Python), Google Gemini (Multimodal Embeddings), FAISS (Vector DB), SQLite (Metadata), BM25 (Keyword Retrieval), Watchdog (Auto-indexing).
 
 ---
 
