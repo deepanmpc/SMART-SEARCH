@@ -105,13 +105,14 @@ async function fetchStats() {
         }
 
         // Only hide/show based on stats if we ALREADY HAVE A KEY
+        // BUT: Do not force onboarding if index is empty but we have a key.
+        // Users can just index a folder later.
         if (hasKey) {
-            if (data.total_chunks === 0 && !statusData.is_indexing) {
-                setupWizard.classList.remove('hidden');
-                showStep(1);
-            } else {
-                setupWizard.classList.add('hidden');
-            }
+            setupWizard.classList.add('hidden');
+        } else {
+            // No key, must show wizard
+            setupWizard.classList.remove('hidden');
+            showStep(1);
         }
         updateWindowSize();
     } catch (e) {
