@@ -30,17 +30,17 @@ It works across **images, videos, audio, PDFs, Word docs, and code files** using
 
 ---
 
-## 🎬 Screenshots
+##  Screenshots
 
-### 🌐 Website Landing Page
+###  Website Landing Page
 ![Search Wizard Website](assets/screenshot_website.png)
 
-### 🚀 Desktop Launcher UI
+###  Desktop Launcher UI
 ![Search Wizard Launcher](assets/screenshot_launcher.png)
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 -  **Semantic Search**: Search by meaning, not titles. "sunset at the beach" finds the right file even if it's named `IMG_9021.jpg`.
 -  **Multimodal Support**: One search for everything. Images, videos, audio, and complex documents (PDF, DOCX).
@@ -52,7 +52,7 @@ It works across **images, videos, audio, PDFs, Word docs, and code files** using
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```mermaid
 graph TD
@@ -75,7 +75,7 @@ graph TD
 
 ---
 
-## ⌨️ Keyboard shortcuts
+##  Keyboard shortcuts
 
 | Shortcut | Action |
 |----------|--------|
@@ -88,7 +88,7 @@ graph TD
 
 ---
 
-## 🔍 Example Queries
+##  Example Queries
 
 Try these in the search bar:
 - `photo of a person wearing blue coolers`
@@ -99,7 +99,7 @@ Try these in the search bar:
 
 ---
 
-## 🔒 Privacy & Trust
+##  Privacy & Trust
 
 Search Wizard was built with privacy as a core principle:
 - **No File Uploads**: Your actual files are never uploaded to any server.
@@ -112,7 +112,7 @@ Search Wizard was built with privacy as a core principle:
 
 If you download the `.dmg` and see a message saying **"SEARCH WIZARD is damaged and can't be opened"**, this is a standard macOS security feature (Gatekeeper) for unsigned applications.
 
-### 🛠️ How to fix (COMPULSORY):
+###  How to fix (COMPULSORY):
 1.  Open **Terminal** on your Mac.
 2.  Run this command:
     ```bash
@@ -122,7 +122,7 @@ If you download the `.dmg` and see a message saying **"SEARCH WIZARD is damaged 
 
 ---
 
-## 🛠️ Development
+##  Development
 
 ```bash
 # Clone the repo
@@ -154,7 +154,7 @@ npm start
 
 ---
 
-## 📄 License
+##  License
 
 MIT License. Free for everyone!
 
