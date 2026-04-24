@@ -473,7 +473,7 @@ def cmd_status():
         ("Chunks indexed",  bold(str(total))),
         ("FAISS index",     bold(f"{round(index_size/1_000_000, 2)} MB") + dim(f"  ({INDEX_PATH})")),
         ("SQLite DB",       bold(f"{round(db_size/1_000_000, 2)} MB") + dim(f"  ({DB_PATH})")),
-        ("Embed model",     dim("gemini-embedding-2-preview")),
+        ("Embed model",     dim("gemini-embedding-2")),
         ("Chunk size",      dim(f"{CHUNK_WORDS} words / {OVERLAP}w overlap")),
         ("GOOGLE_API_KEY",  ok("set") if api_key else err("NOT SET")),
     ]

@@ -20,7 +20,7 @@ from google import genai
 from google.genai import types
 
 _client = None
-EMBEDDING_MODEL = "gemini-embedding-2-preview"
+EMBEDDING_MODEL = "gemini-embedding-2"
 DEFAULT_DIMENSION = 768
 
 
@@ -57,29 +57,19 @@ def embed_unit(unit: dict, max_retries=3) -> list[float] | None:
             return None
     return None
 
-def embed_batch(units: list[dict], max_retries=3) -> list[list[float]]:
+def embed_batch(units: list[dict], max_retries=3) -> list[list[float] | None]:
     """
-    Embed multiple units in a single batch request using dimensionality scaling.
+    Embed multiple units with one vector per unit.
+
+    Gemini Embedding 2 aggregates multiple contents in a single request, so keep
+    the app-level batch API but send one unit per model call.
     """
     if not units: return []
-    for attempt in range(max_retries):
-        try:
-            parts = []
-            for u in units:
-                if u["type"] == "text": parts.append(u["data"])
-                else: parts.append(types.Part.from_bytes(data=u["data"], mime_type=u["mime_type"]))
-
-            result = _get_client().models.embed_content(
-                model=EMBEDDING_MODEL,
-                contents=parts,
-                config=types.EmbedContentConfig(output_dimensionality=DEFAULT_DIMENSION)
-            )
-            return [e.values for e in result.embeddings]
-        except Exception as e:
-            if _handle_api_error(e, attempt, max_retries): continue
-            print(f"  Batch embedding failed: {e}")
-            return []
-    return []
+    vectors = []
+    for unit in units:
+        vec = embed_unit(unit, max_retries=max_retries)
+        vectors.append(vec)
+    return vectors
 
 def embed_query(query: str, max_retries=3) -> list[float]:
     """Embed a single query string with dimensionality scaling."""
